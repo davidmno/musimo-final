@@ -1,0 +1,16 @@
+# Dependencias y compilaciones
+**/node_modules/
+**/dist/
+
+# Variables de entorno y secretos
+back/.env
+front/.env
+front/.env.local
+front/.env.production
+front/.env.*.local
+
+# Sistema y editor
+.DS_Store
+.vscode/
+.idea/
+*.log

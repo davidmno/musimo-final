@@ -1,0 +1,32 @@
+{
+  "name": "musimo-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "nodemon main.js",
+    "check": "node --check main.js",
+    "make-admin": "node make-admin.js",
+    "seed:community": "node seed-community.js",
+    "migrate:ownership": "node migrate-ownership.js",
+    "set-role": "node set-role.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "3.1.14"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "7.1.1",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1",
+    "yup": "^1.7.1"
+  }
+}
