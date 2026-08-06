@@ -327,18 +327,201 @@ async function sendResetEmail(email, resetUrl) {
         to: [{ email }],
         subject: "Recuperá tu contraseña de musimo",
         htmlContent: `
-          <p>Recibimos un pedido para cambiar tu contraseña.</p>
-          <p>
-            <a href="${resetUrl}">
-              Elegir una contraseña nueva
-            </a>
-          </p>
-          <p>El enlace vence en una hora.</p>
+          <!doctype html>
+          <html lang="es">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>Recuperá tu contraseña de musimo</title>
+            </head>
+
+            <body
+              style="
+                margin: 0;
+                padding: 0;
+                background: #111110;
+                font-family: Arial, Helvetica, sans-serif;
+                color: #171513;
+              "
+            >
+              <table
+                role="presentation"
+                width="100%"
+                cellpadding="0"
+                cellspacing="0"
+                style="
+                  width: 100%;
+                  border-collapse: collapse;
+                  background: #111110;
+                "
+              >
+                <tr>
+                  <td
+                    align="center"
+                    style="padding: 32px 16px;"
+                  >
+                    <table
+                      role="presentation"
+                      width="100%"
+                      cellpadding="0"
+                      cellspacing="0"
+                      style="
+                        width: 100%;
+                        max-width: 560px;
+                        border-collapse: collapse;
+                        overflow: hidden;
+                        border-radius: 16px;
+                        background: #f2ece1;
+                        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+                      "
+                    >
+                      <tr>
+                        <td
+                          style="
+                            padding: 28px 32px 22px;
+                            background: #c0451b;
+                            color: #fff8f5;
+                          "
+                        >
+                          <p
+                            style="
+                              margin: 0 0 8px;
+                              font-size: 12px;
+                              font-weight: 700;
+                              letter-spacing: 0.12em;
+                              text-transform: uppercase;
+                            "
+                          >
+                            Tu cuenta
+                          </p>
+
+                          <h1
+                            style="
+                              margin: 0;
+                              font-size: 28px;
+                              line-height: 1.15;
+                              font-family: Georgia, 'Times New Roman', serif;
+                            "
+                          >
+                            Recuperá tu contraseña
+                          </h1>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="padding: 32px;">
+                          <p
+                            style="
+                              margin: 0 0 18px;
+                              font-size: 16px;
+                              line-height: 1.6;
+                            "
+                          >
+                            Recibimos un pedido para cambiar la contraseña de tu
+                            cuenta de musimo.
+                          </p>
+
+                          <p
+                            style="
+                              margin: 0 0 26px;
+                              font-size: 16px;
+                              line-height: 1.6;
+                            "
+                          >
+                            Usá el siguiente botón para elegir una contraseña nueva.
+                          </p>
+
+                          <table
+                            role="presentation"
+                            cellpadding="0"
+                            cellspacing="0"
+                            style="border-collapse: collapse;"
+                          >
+                            <tr>
+                              <td
+                                align="center"
+                                style="
+                                  border-radius: 10px;
+                                  background: #c0451b;
+                                "
+                              >
+                                <a
+                                  href="${resetUrl}"
+                                  style="
+                                    display: inline-block;
+                                    padding: 14px 22px;
+                                    color: #ffffff;
+                                    font-size: 15px;
+                                    font-weight: 700;
+                                    text-decoration: none;
+                                  "
+                                >
+                                  Elegir una contraseña nueva
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+
+                          <p
+                            style="
+                              margin: 26px 0 0;
+                              color: #6f675f;
+                              font-size: 13px;
+                              line-height: 1.6;
+                            "
+                          >
+                            Este enlace vence en una hora. Si no pediste este cambio,
+                            podés ignorar este mensaje.
+                          </p>
+
+                          <p
+                            style="
+                              margin: 22px 0 0;
+                              color: #6f675f;
+                              font-size: 12px;
+                              line-height: 1.6;
+                              word-break: break-all;
+                            "
+                          >
+                            Si el botón no funciona, copiá y pegá este enlace en tu navegador:
+                            <br />
+                            <a
+                              href="${resetUrl}"
+                              style="
+                                color: #8d619f;
+                                text-decoration: none;
+                              "
+                            >
+                              ${resetUrl}
+                            </a>
+                          </p>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td
+                          style="
+                            padding: 18px 32px;
+                            border-top: 1px solid rgba(23, 21, 19, 0.12);
+                            color: #7b746d;
+                            font-size: 12px;
+                          "
+                        >
+                          musimo · Música, significado y momentos
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+          </html>
         `,
         textContent:
-          `Recibimos un pedido para cambiar tu contraseña.\n\n` +
-          `Elegí una contraseña nueva: ${resetUrl}\n\n` +
-          `El enlace vence en una hora.`,
+          `Recibimos un pedido para cambiar la contraseña de tu cuenta de musimo.\n\n` +
+          `Elegí una contraseña nueva:\n${resetUrl}\n\n` +
+          `El enlace vence en una hora.\n\n` +
+          `Si no pediste este cambio, podés ignorar este mensaje.`,
       }),
       signal: AbortSignal.timeout(10_000),
     },
