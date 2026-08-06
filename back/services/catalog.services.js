@@ -482,13 +482,17 @@ function normalizeArtist(artist = {}) {
     id: artist.id,
     catalogId: artist.id,
     name: artist.name,
-    sortName:
-      artist["sort-name"] ||
-      artist.name,
+    sortName: artist["sort-name"] || artist.name,
     type: artist.type || "Artista",
     country: artist.country || null,
-    disambiguation:
-      artist.disambiguation || "",
+    disambiguation: artist.disambiguation || "",
+    aliases: (artist.aliases || [])
+      .map(
+        (alias) =>
+          alias.name || alias["sort-name"],
+      )
+      .filter(Boolean),
+    lifeSpan: artist["life-span"] || null,
     image: PLACEHOLDER,
     slug: slugify(artist.name),
     score: Number(artist.score) || 0,
@@ -807,38 +811,246 @@ function textMatchScore(
   );
 }
 
+function artistReleaseEvidence(
+  releaseGroups = [],
+) {
+  const evidence = new Map();
+
+  releaseGroups.forEach((release) => {
+    (release["artist-credit"] || []).forEach(
+      (credit) => {
+        const artistId = credit.artist?.id;
+
+        if (!artistId) {
+          return;
+        }
+
+        evidence.set(
+          artistId,
+          (evidence.get(artistId) || 0) + 1,
+        );
+      },
+    );
+  });
+
+  return evidence;
+}
+
+function artistMetadataScore(artist = {}) {
+  let score = 0;
+
+  /*
+   * Un artista con tipo, país, período de actividad
+   * o descripción suele ser una entrada mejor
+   * documentada en MusicBrainz.
+   */
+  if (
+    artist.type &&
+    artist.type !== "Artista"
+  ) {
+    score += 35;
+  }
+
+  if (artist.country) {
+    score += 35;
+  }
+
+  if (artist.disambiguation) {
+    score += 30;
+  }
+
+  if (artist.lifeSpan?.begin) {
+    score += 25;
+  }
+
+  if (artist.aliases?.length) {
+    score += 20;
+  }
+
+  return score;
+}
+
+function isPriorityArtist(artist = {}) {
+  const name = normalizeText(
+    artist.name || "",
+  );
+
+  return PRIORITY_POP_ARTISTS.some(
+    (priorityName) =>
+      normalizeText(priorityName) === name,
+  );
+}
+
 function rankArtists(
   artists = [],
   query = "",
+  releaseGroups = [],
 ) {
-  return uniqueById(artists).sort(
-    (left, right) => {
-      const leftRank =
-        textMatchScore(
-          left.name,
-          query,
-        ) +
-        Number(left.score || 0);
+  const clean = normalizeText(query);
 
-      const rightRank =
-        textMatchScore(
-          right.name,
-          query,
-        ) +
-        Number(right.score || 0);
+  const queryWords = clean
+    .split(" ")
+    .filter(Boolean);
 
-      if (rightRank !== leftRank) {
-        return rightRank - leftRank;
+  /*
+   * También consideramos si el artista aparece
+   * en los lanzamientos encontrados.
+   */
+  const evidence =
+    artistReleaseEvidence(releaseGroups);
+
+  const scored = uniqueById(artists)
+    .map((artist) => {
+      const nameMatch = textMatchScore(
+        artist.name,
+        clean,
+      );
+
+      const aliasMatch = Math.max(
+        0,
+        ...(artist.aliases || []).map(
+          (alias) =>
+            textMatchScore(alias, clean),
+        ),
+      );
+
+      const directMatch = Math.max(
+        nameMatch,
+        aliasMatch,
+      );
+
+      const musicBrainzScore = Number(
+        artist.score || 0,
+      );
+
+      const releaseMatches =
+        evidence.get(artist.id) || 0;
+
+      const normalizedName = normalizeText(
+        artist.name || "",
+      );
+
+      /*
+       * MusicBrainz contiene entradas llamadas
+       * solamente "Kylie" que casi no tienen datos.
+       *
+       * No las eliminamos por completo, pero les
+       * quitamos prioridad frente a artistas
+       * correctamente documentados.
+       */
+      const weakBareExactMatch =
+        queryWords.length === 1 &&
+        normalizedName === clean &&
+        !artist.country &&
+        !artist.disambiguation &&
+        !artist.lifeSpan?.begin;
+
+      const rank =
+        /*
+         * Coincidencia por nombre o alias.
+         */
+        Math.max(
+          nameMatch,
+          aliasMatch * 0.95,
+        ) +
+
+        /*
+         * Puntaje original de MusicBrainz.
+         */
+        musicBrainzScore * 4 +
+
+        /*
+         * Calidad de la información disponible.
+         */
+        artistMetadataScore(artist) +
+
+        /*
+         * Presencia en los lanzamientos encontrados.
+         */
+        Math.min(
+          releaseMatches * 120,
+          360,
+        ) +
+
+        /*
+         * Artistas reconocibles definidos
+         * para la experiencia de Musimo.
+         */
+        (isPriorityArtist(artist)
+          ? 500
+          : 0) -
+
+        /*
+         * Penalización para entradas genéricas
+         * que solamente tienen un nombre.
+         */
+        (weakBareExactMatch
+          ? 300
+          : 0);
+
+      return {
+        artist,
+        rank,
+        directMatch,
+        musicBrainzScore,
+      };
+    })
+
+    /*
+     * Conservamos coincidencias textuales o resultados
+     * que MusicBrainz considere suficientemente fuertes.
+     *
+     * Esto mantiene la tolerancia a errores como
+     * "kilie" o "madona".
+     */
+    .filter(
+      ({
+        directMatch,
+        musicBrainzScore,
+      }) =>
+        directMatch > 0 ||
+        musicBrainzScore >= 70,
+    )
+
+    .sort((left, right) => {
+      if (right.rank !== left.rank) {
+        return right.rank - left.rank;
       }
 
       return String(
-        left.name || "",
+        left.artist.name || "",
       ).localeCompare(
-        String(right.name || ""),
+        String(
+          right.artist.name || "",
+        ),
         "es",
       );
-    },
-  );
+    });
+
+  /*
+   * MusicBrainz puede tener cinco identificadores
+   * diferentes cuyo nombre visible es "Kylie".
+   *
+   * Para el usuario representan un duplicado,
+   * por lo que conservamos únicamente el resultado
+   * mejor posicionado de cada nombre.
+   */
+  const names = new Set();
+
+  return scored
+    .filter(({ artist }) => {
+      const key = normalizeText(
+        artist.name || "",
+      );
+
+      if (!key || names.has(key)) {
+        return false;
+      }
+
+      names.add(key);
+      return true;
+    })
+    .map(({ artist }) => artist);
 }
 
 function rankReleases(
@@ -1178,8 +1390,7 @@ export async function searchCatalog(
   limit = 10,
   options = {},
 ) {
-  const clean =
-    normalizeText(query);
+  const clean = normalizeText(query);
 
   if (clean.length < 2) {
     return {
@@ -1209,8 +1420,7 @@ export async function searchCatalog(
     options.expandArtist,
   );
 
-  const terms =
-    fuzzyTerms(clean);
+  const terms = fuzzyTerms(clean);
 
   const exact = clean
     .replace(
@@ -1219,8 +1429,12 @@ export async function searchCatalog(
     )
     .trim();
 
+  /*
+   * Cambiamos v3 por v4 para no reutilizar
+   * los resultados defectuosos guardados.
+   */
   const key =
-    `search:v3:${clean}:` +
+    `search:v4:${clean}:` +
     `${safeLimit}:` +
     `${expandArtist ? 1 : 0}:` +
     `${releaseLimit}`;
@@ -1244,6 +1458,21 @@ export async function searchCatalog(
               `(${terms})`,
           );
 
+        /*
+         * Pedimos más candidatos de artistas para
+         * poder seleccionar los mejores después.
+         *
+         * Antes sólo pedíamos 14 y esos lugares
+         * podían llenarse con duplicados.
+         */
+        const artistSearchLimit = Math.min(
+          Math.max(
+            safeLimit * 3,
+            30,
+          ),
+          50,
+        );
+
         const [
           releaseData,
           artistData,
@@ -1253,7 +1482,7 @@ export async function searchCatalog(
           ),
 
           queuedMusicBrainzFetch(
-            `/artist?query=${artistQuery}&fmt=json&limit=${safeLimit}`,
+            `/artist?query=${artistQuery}&fmt=json&limit=${artistSearchLimit}`,
           ),
         ]);
 
@@ -1284,6 +1513,7 @@ export async function searchCatalog(
             ),
           ],
           clean,
+          releaseGroups,
         );
 
         let releases =
@@ -1321,10 +1551,19 @@ export async function searchCatalog(
               0,
               safeLimit,
             ),
+
+          /*
+           * Para una búsqueda útil es mejor mostrar
+           * ocho artistas relevantes que catorce
+           * artistas repetidos o desconocidos.
+           */
           artists:
             artists.slice(
               0,
-              safeLimit,
+              Math.min(
+                safeLimit,
+                8,
+              ),
             ),
         };
       },
