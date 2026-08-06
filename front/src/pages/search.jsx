@@ -70,35 +70,86 @@ function getReleaseYear(release = {}) {
   return Number(String(value).slice(0, 4)) || 0;
 }
 
-function getLatestArtistReleaseImage(artist, releases = []) {
-  const artistName = normalizeArtistName(artist.name);
+function getLatestArtistReleaseImage(
+  artist,
+  releases = [],
+) {
+  const artistId = String(
+    artist.id ||
+      artist.catalogId ||
+      "",
+  );
+
+  const artistName =
+    normalizeArtistName(
+      artist.name,
+    );
 
   return [...releases]
     .filter((release) => {
-      const releaseArtist = normalizeArtistName(
-        release.artist ||
-        release.artistName ||
-        (Array.isArray(release.artists)
-          ? release.artists
-              .map((item) => item.name || item)
-              .join(" ")
-          : release.artists || ""),
+      const releaseArtistId = String(
+        release.artistId ||
+          release.artist?.id ||
+          "",
       );
 
-      if (!releaseArtist) return true;
+      /*
+       * Cuando existen identificadores, exigimos
+       * que sean exactamente iguales.
+       *
+       * Así una portada de Kylie Minogue no se
+       * asigna a otro artista llamado Kylie.
+       */
+      if (
+        artistId &&
+        releaseArtistId
+      ) {
+        return (
+          artistId ===
+          releaseArtistId
+        );
+      }
 
-      return (
-        releaseArtist === artistName ||
-        releaseArtist.includes(artistName) ||
-        artistName.includes(releaseArtist)
+      const releaseArtist =
+        normalizeArtistName(
+          release.artist ||
+            release.artistName ||
+            (
+              Array.isArray(
+                release.artists,
+              )
+                ? release.artists
+                    .map(
+                      (item) =>
+                        item.name ||
+                        item,
+                    )
+                    .join(" ")
+                : release.artists ||
+                  ""
+            ),
+        );
+
+      /*
+       * Si falta el identificador, permitimos
+       * únicamente una coincidencia exacta.
+       *
+       * Ya no usamos includes().
+       */
+      return Boolean(
+        releaseArtist &&
+          releaseArtist === artistName,
       );
     })
     .sort(
       (left, right) =>
-        getReleaseYear(right) - getReleaseYear(left),
+        getReleaseYear(right) -
+        getReleaseYear(left),
     )
     .map(getReleaseImage)
-    .find(hasUsableArtistImage) || "";
+    .find(
+      hasUsableArtistImage,
+    ) || "";
 }
 
 function ArtistResult({ artist, releases = [] }) {
