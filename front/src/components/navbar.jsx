@@ -143,7 +143,9 @@ export default function Navbar() {
   }
 
   const mobileRoot = location.pathname === "/inicio";
-
+const ownProfilePath = `/usuario/${usuario?.handle || "perfil"}`;
+const isOwnMobileProfile =
+  isMobile && location.pathname === ownProfilePath;
   return (
     <>
       <header className="app-nav-wrap" ref={rootRef}>
@@ -265,21 +267,35 @@ export default function Navbar() {
           <Link to="/inicio" className="mobile-app-logo" aria-label="musimo, inicio">
             <img src="/images/logo.png" alt="musimo" />
           </Link>
-          <button
-            className="mobile-notification-trigger"
-            type="button"
-            onClick={() => navigate("/notificaciones")}
-            aria-label={
-              unread ? `${unread} notificaciones sin leer` : "Notificaciones"
-            }
-          >
-            <AppIcon name="bell" size={23} />
-            {unread > 0 && (
-              <span className="notification-badge">
-                {unread > 99 ? "99+" : unread}
-              </span>
-            )}
-          </button>
+          {isOwnMobileProfile ? (
+  <button
+    className="mobile-notification-trigger"
+    type="button"
+    onClick={signOut}
+    aria-label="Cerrar sesión"
+    title="Cerrar sesión"
+  >
+    <AppIcon name="logout" size={23} />
+  </button>
+) : (
+  <button
+    className="mobile-notification-trigger"
+    type="button"
+    onClick={() => navigate("/notificaciones")}
+    aria-label={
+      unread
+        ? `${unread} notificaciones sin leer`
+        : "Notificaciones"
+    }
+  >
+    <AppIcon name="bell" size={23} />
+    {unread > 0 && (
+      <span className="notification-badge">
+        {unread > 99 ? "99+" : unread}
+      </span>
+    )}
+  </button>
+)}
         </div>
       </header>
       <nav className="mobile-tabbar" aria-label="Navegación móvil">
