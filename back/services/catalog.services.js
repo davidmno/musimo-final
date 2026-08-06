@@ -55,9 +55,6 @@ const PRIORITY_POP_ARTISTS = [
   "Kylie Minogue",
   "Troye Sivan",
   "Lorde",
-  "ylie Minogue",
-  "Troye Sivan",
-  "Lorde",
   "Tate McRae",
 ];
 
@@ -570,7 +567,7 @@ async function releaseGroupHasCover(
           },
           signal:
             AbortSignal.timeout(
-              5_000,
+              3_000,
             ),
         },
       );
@@ -651,7 +648,8 @@ async function takeReleasesWithCovers(
   limit = 12,
 ) {
   const selected = [];
-  const batchSize = 5;
+  const batchSize = 12;
+  const candidates = releases.slice(0, Math.max(limit * 3, limit));
 
   /*
    * Revisamos pequeños grupos
@@ -662,11 +660,11 @@ async function takeReleasesWithCovers(
    */
   for (
     let index = 0;
-    index < releases.length &&
+    index < candidates.length &&
     selected.length < limit;
     index += batchSize
   ) {
-    const batch = releases.slice(
+    const batch = candidates.slice(
       index,
       index + batchSize,
     );
@@ -1434,7 +1432,7 @@ export async function searchCatalog(
    * los resultados defectuosos guardados.
    */
   const key =
-    `search:v4:${clean}:` +
+    `search:v5:${clean}:` +
     `${safeLimit}:` +
     `${expandArtist ? 1 : 0}:` +
     `${releaseLimit}`;
@@ -1773,6 +1771,37 @@ export async function getArtistReleases(
   );
 }
 
+/**
+ * Devuelve una lista breve de portadas candidatas para representar al artista.
+ * La primera corresponde al lanzamiento más reciente con imagen disponible.
+ * El frontend conserva varias opciones para poder probar la siguiente si una URL falla.
+ */
+export async function getArtistImages(id, limit = 8) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 8, 1), 12);
+  const releases = await getArtistReleases(id, 100);
+  const images = [];
+  const seen = new Set();
+
+  for (const release of releases) {
+    const image = String(release.image || "").trim();
+
+    if (
+      !image ||
+      image.includes("cover-placeholder") ||
+      seen.has(image)
+    ) {
+      continue;
+    }
+
+    seen.add(image);
+    images.push(image);
+
+    if (images.length >= safeLimit) break;
+  }
+
+  return { artistId: String(id), images };
+}
+
 function normalizeNewRelease(
   release = {},
 ) {
@@ -1914,211 +1943,104 @@ export async function getNewReleases(
   options = {},
 ) {
   const safeLimit = Math.min(
-    Math.max(
-      Number(limit) || 12,
-      1,
-    ),
+    Math.max(Number(limit) || 12, 1),
     24,
   );
-
   const days = Math.min(
-    Math.max(
-      Number(options.days) || 90,
-      1,
-    ),
+    Math.max(Number(options.days) || 90, 1),
     365,
   );
-
-  const genre = normalizeText(
-    options.genre || "",
-  );
-
+  const genre = normalizeText(options.genre || "");
   const end = new Date();
   const start = new Date(end);
 
-  start.setDate(
-    start.getDate() - days,
-  );
+  start.setDate(start.getDate() - days);
 
-  const date = (value) =>
-    value
-      .toISOString()
-      .slice(0, 10);
-
+  const date = (value) => value.toISOString().slice(0, 10);
   const dateClause =
-    `firstreleasedate:[` +
-    `${date(start)} TO ${date(end)}]`;
-
-  /*
-   * Búsqueda general:
-   * conserva el género pop
-   * y el rango de fechas.
-   */
-  const genreClause = genre
-    ? `tag:${genre.replace(
-        /[^a-z0-9-]/g,
-        "",
-      )}`
-    : "";
-
-  const generalQuery =
-    encodeURIComponent(
-      [
-        genreClause,
-        dateClause,
-      ]
-        .filter(Boolean)
-        .join(" AND "),
-    );
-
-  /*
-   * Búsqueda prioritaria:
-   * busca artistas conocidos aunque
-   * el lanzamiento todavía no tenga
-   * correctamente cargada
-   * la etiqueta pop.
-   */
-  const priorityArtistsClause =
-    PRIORITY_POP_ARTISTS.map(
-      (artist) =>
-        `artistname:"${artist}"`,
-    ).join(" OR ");
-
-  const priorityQuery =
-    encodeURIComponent(
-      `(${priorityArtistsClause}) AND ${dateClause}`,
-    );
+    `firstreleasedate:[${date(start)} TO ${date(end)}]`;
+  const finalCacheKey =
+    `new-curated:v1:${genre || "all"}:${days}:${date(end)}:${safeLimit}`;
 
   try {
     /*
-     * Pedimos más resultados de los
-     * que finalmente mostraremos
-     * para poder ordenarlos,
-     * revisar sus portadas
-     * y seleccionar los mejores.
+     * Guardamos también la selección final. Así la portada se valida una sola
+     * vez por período de caché y la pantalla de Inicio no repite decenas de
+     * consultas al servicio de imágenes en cada visita.
      */
-    const fetchLimit = Math.min(
-      Math.max(
-        safeLimit * 5,
-        60,
-      ),
-      100,
-    );
+    return await persistentCached(
+      finalCacheKey,
+      async () => {
+        const genreClause = genre
+          ? `tag:${genre.replace(/[^a-z0-9-]/g, "")}`
+          : "";
+        const generalQuery = encodeURIComponent(
+          [genreClause, dateClause].filter(Boolean).join(" AND "),
+        );
+        const priorityArtistsClause = PRIORITY_POP_ARTISTS
+          .map((artist) => `artistname:"${artist}"`)
+          .join(" OR ");
+        const priorityQuery = encodeURIComponent(
+          `(${priorityArtistsClause}) AND ${dateClause}`,
+        );
+        const fetchLimit = Math.min(
+          Math.max(safeLimit * 5, 60),
+          100,
+        );
 
-    const [
-      priorityResult,
-      generalResult,
-    ] = await Promise.allSettled([
-      persistentCached(
-        `new:v3:priority:${days}:${date(
-          end,
-        )}:${safeLimit}`,
-        () =>
-          queuedMusicBrainzFetch(
-            `/release-group?query=${priorityQuery}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
+        const [priorityResult, generalResult] = await Promise.allSettled([
+          persistentCached(
+            `new:v4:priority:${days}:${date(end)}:${safeLimit}`,
+            () =>
+              queuedMusicBrainzFetch(
+                `/release-group?query=${priorityQuery}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
+              ),
+            CACHE_POLICY.newReleases,
           ),
-        CACHE_POLICY.newReleases,
-      ),
-
-      persistentCached(
-        `new:v3:${
-          genre || "all"
-        }:${days}:${date(
-          end,
-        )}:${safeLimit}`,
-        () =>
-          queuedMusicBrainzFetch(
-            `/release-group?query=${generalQuery}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
+          persistentCached(
+            `new:v4:${genre || "all"}:${days}:${date(end)}:${safeLimit}`,
+            () =>
+              queuedMusicBrainzFetch(
+                `/release-group?query=${generalQuery}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
+              ),
+            CACHE_POLICY.newReleases,
           ),
-        CACHE_POLICY.newReleases,
-      ),
-    ]);
+        ]);
 
-    const priorityGroups =
-      priorityResult.status ===
-      "fulfilled"
-        ? priorityResult.value[
-            "release-groups"
-          ] || []
-        : [];
+        const priorityGroups =
+          priorityResult.status === "fulfilled"
+            ? priorityResult.value["release-groups"] || []
+            : [];
+        const generalGroups =
+          generalResult.status === "fulfilled"
+            ? generalResult.value["release-groups"] || []
+            : [];
+        const groups = [...priorityGroups, ...generalGroups];
 
-    const generalGroups =
-      generalResult.status ===
-      "fulfilled"
-        ? generalResult.value[
-            "release-groups"
-          ] || []
-        : [];
+        if (!groups.length) {
+          throw new Error("No se encontraron lanzamientos externos.");
+        }
 
-    const groups = [
-      ...priorityGroups,
-      ...generalGroups,
-    ];
+        const releases = uniqueById(groups).map(normalizeNewRelease);
+        const orderedReleases = sortCuratedNewReleases(releases);
+        const selected = await takeReleasesWithCovers(
+          orderedReleases,
+          safeLimit,
+        );
 
-    if (!groups.length) {
-      throw new Error(
-        "No se encontraron lanzamientos externos.",
-      );
-    }
+        if (!selected.length) {
+          throw new Error("No se encontraron lanzamientos con portada.");
+        }
 
-    /*
-     * Eliminamos duplicados y
-     * convertimos los datos de
-     * MusicBrainz al formato
-     * que utiliza Musimo.
-     */
-    const releases = uniqueById(
-      groups,
-    ).map(normalizeNewRelease);
-
-    /*
-     * Primero ordenamos:
-     * 1. Artistas conocidos.
-     * 2. Álbumes.
-     * 3. Lanzamientos recientes.
-     */
-    const orderedReleases =
-      sortCuratedNewReleases(
-        releases,
-      );
-
-    /*
-     * Finalmente verificamos
-     * la existencia real de
-     * cada portada.
-     *
-     * Las tarjetas cuya imagen
-     * no esté disponible quedan
-     * fuera de la sección.
-     */
-    return takeReleasesWithCovers(
-      orderedReleases,
-      safeLimit,
+        return selected;
+      },
+      CACHE_POLICY.newReleases,
     );
   } catch {
-    /*
-     * Si MusicBrainz falla,
-     * buscamos lanzamientos
-     * guardados dentro de Musimo.
-     *
-     * Pedimos más candidatos porque
-     * algunos podrían descartarse
-     * por no tener portada.
-     */
-    const fallback =
-      await localNewReleasesFallback(
-        safeLimit * 3,
-      );
+    const fallback = await localNewReleasesFallback(safeLimit * 3);
+    const orderedFallback = sortCuratedNewReleases(fallback);
 
-    const orderedFallback =
-      sortCuratedNewReleases(
-        fallback,
-      );
-
-    return takeReleasesWithCovers(
-      orderedFallback,
-      safeLimit,
-    );
+    return takeReleasesWithCovers(orderedFallback, safeLimit);
   }
 }
 

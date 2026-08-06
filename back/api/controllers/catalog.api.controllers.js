@@ -49,6 +49,14 @@ export async function getArtistReleases(req, res, next) {
   }
 }
 
+export async function getArtistImages(req, res, next) {
+  try {
+    res.json(await catalog.getArtistImages(req.params.id, req.query.limit));
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getNewReleases(req, res, next) {
   try {
     res.json(await catalog.getNewReleases(req.query.limit));

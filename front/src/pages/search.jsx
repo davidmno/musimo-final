@@ -16,6 +16,7 @@ import {
 import { getArtistUrl } from "../services/artist-link.service";
 import { getAlbumUrl } from "../services/album-link.service";
 import AppIcon from "../components/app-icon";
+import ArtistImage from "../components/artist-image";
 import { followUser, unfollowUser } from "../services/usuarios.service";
 
 const categories = [
@@ -35,128 +36,8 @@ const categoryAliases = {
 };
 
 
-function hasUsableArtistImage(image) {
-  return Boolean(
-    image &&
-    !image.includes("cover-placeholder"),
-  );
-}
-
-function normalizeArtistName(value = "") {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function getReleaseImage(release = {}) {
-  return (
-    release.image ||
-    release.cover ||
-    release.coverImage ||
-    ""
-  );
-}
-
-function getReleaseYear(release = {}) {
-  const value =
-    release.releaseDate ||
-    release.date ||
-    release.year ||
-    "";
-
-  return Number(String(value).slice(0, 4)) || 0;
-}
-
-function getLatestArtistReleaseImage(
-  artist,
-  releases = [],
-) {
-  const artistId = String(
-    artist.id ||
-      artist.catalogId ||
-      "",
-  );
-
-  const artistName =
-    normalizeArtistName(
-      artist.name,
-    );
-
-  return [...releases]
-    .filter((release) => {
-      const releaseArtistId = String(
-        release.artistId ||
-          release.artist?.id ||
-          "",
-      );
-
-      /*
-       * Cuando existen identificadores, exigimos
-       * que sean exactamente iguales.
-       *
-       * Así una portada de Kylie Minogue no se
-       * asigna a otro artista llamado Kylie.
-       */
-      if (
-        artistId &&
-        releaseArtistId
-      ) {
-        return (
-          artistId ===
-          releaseArtistId
-        );
-      }
-
-      const releaseArtist =
-        normalizeArtistName(
-          release.artist ||
-            release.artistName ||
-            (
-              Array.isArray(
-                release.artists,
-              )
-                ? release.artists
-                    .map(
-                      (item) =>
-                        item.name ||
-                        item,
-                    )
-                    .join(" ")
-                : release.artists ||
-                  ""
-            ),
-        );
-
-      /*
-       * Si falta el identificador, permitimos
-       * únicamente una coincidencia exacta.
-       *
-       * Ya no usamos includes().
-       */
-      return Boolean(
-        releaseArtist &&
-          releaseArtist === artistName,
-      );
-    })
-    .sort(
-      (left, right) =>
-        getReleaseYear(right) -
-        getReleaseYear(left),
-    )
-    .map(getReleaseImage)
-    .find(
-      hasUsableArtistImage,
-    ) || "";
-}
-
-function ArtistResult({ artist, releases = [] }) {
-  const image =
-    (hasUsableArtistImage(artist.image) ? artist.image : "") ||
-    getLatestArtistReleaseImage(artist, releases) ||
-    "";
+function ArtistResult({ artist }) {
+  const [resolvedImage, setResolvedImage] = useState("");
 
   return (
     <Link
@@ -165,7 +46,7 @@ function ArtistResult({ artist, releases = [] }) {
       onClick={() =>
         saveRecentSearch({
           ...artist,
-          image,
+          image: resolvedImage,
           type: "artist",
           title: artist.name,
           subtitle: "Artista",
@@ -173,11 +54,7 @@ function ArtistResult({ artist, releases = [] }) {
       }
     >
       <span className="artist-avatar">
-        {image ? (
-          <img src={image} alt="" />
-        ) : (
-          artist.name?.slice(0, 1)
-        )}
+        <ArtistImage artist={artist} onResolve={setResolvedImage} />
       </span>
 
       <span className="artist-result-copy">
@@ -215,11 +92,19 @@ function RecentItem({ item, remove }) {
   const round = item.type === "artist" || item.type === "person";
   const image = item.image || item.avatarImage;
   const usableImage = image && !image.includes("cover-placeholder");
+  const recentArtist = {
+    id: item.catalogId || item.id,
+    catalogId: item.catalogId || item.id,
+    name: item.title,
+  };
+
   return (
     <article className="recent-item">
       <Link to={to}>
         <span className={`recent-thumb ${round ? "round" : ""}`}>
-          {usableImage ? (
+          {item.type === "artist" ? (
+            <ArtistImage artist={recentArtist} />
+          ) : usableImage ? (
             <img src={image} alt="" />
           ) : (
             <span aria-hidden="true">
@@ -461,11 +346,7 @@ export default function Search() {
                 <h2>Artistas</h2>
                 <div className="people-grid">
                   {catalog.artists.map((artist) => (
-                    <ArtistResult
-                      key={artist.id}
-                      artist={artist}
-                      releases={catalog.releases}
-                    />
+                    <ArtistResult key={artist.id} artist={artist} />
                   ))}
                 </div>
               </section>

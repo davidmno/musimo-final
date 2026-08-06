@@ -396,7 +396,13 @@ export async function getFeed(userId, filter = "all", audience = "all", page = 1
   const items = [
     ...reviews.map((item) => ({ type: "review", createdAt: item.createdAt, data: visibleReview(item, userId), author: users.get(idString(item.userId)) })),
     ...lists.map((item) => ({ type: "list", createdAt: item.createdAt, data: item, author: users.get(idString(item.ownerId)) })),
-  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(offset, offset + pageSize);
+  ]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime(),
+    )
+    .slice(offset, offset + pageSize);
   const total = reviewCount + listCount;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   return {

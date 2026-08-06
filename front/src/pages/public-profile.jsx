@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
@@ -7,11 +7,12 @@ import StatusMessage from "../components/status-message";
 import ConfirmDialog from "../components/confirm-dialog";
 import { PageTrail } from "../components/page-header";
 import { useAuth } from "../context/use-auth";
-import { getArtistReleases, searchCatalog } from "../services/catalog.service";
+import { searchCatalog } from "../services/catalog.service";
 import { setBreadcrumbContext } from "../services/breadcrumb.service";
 import { getArtistUrl } from "../services/artist-link.service";
 import { clearToReviewList, getToReviewList, removeFromToReview } from "../services/to-review.service";
 import AppIcon from "../components/app-icon";
+import ArtistImage from "../components/artist-image";
 import {
   changePassword,
   followUser,
@@ -24,32 +25,6 @@ import {
 } from "../services/usuarios.service";
 
 const SHOW_HEADER_ALBUMS = false;
-
-function hasUsableArtistImage(image) {
-  return Boolean(image && !image.includes("cover-placeholder"));
-}
-
-function getConsistentArtistCover(releases = []) {
-  return [...releases]
-    .sort((left, right) => {
-      const leftDate =
-        Date.parse(left.releaseDate || left.year || "") ||
-        Number(left.year) ||
-        0;
-
-      const rightDate =
-        Date.parse(right.releaseDate || right.year || "") ||
-        Number(right.year) ||
-        0;
-
-      return rightDate - leftDate;
-    })
-    .find(
-      (release) =>
-        release.image &&
-        !release.image.includes("cover-placeholder"),
-    )?.image;
-}
 
 function accountData(user, top5 = user.top5 || []) {
   return {
@@ -76,8 +51,6 @@ export default function PublicProfile() {
   const [tab, setTab] = useState("profile");
   const [saved, setSaved] = useState([]);
   const [followedArtists, setFollowedArtists] = useState([]);
-  const consistentArtistCoverRequests = useRef(new Set());
-  const requestedArtistImages = useRef(new Set());
   const [editing, setEditing] = useState(false);
   const [editingTop5, setEditingTop5] = useState(false);
   const [query, setQuery] = useState("");
@@ -91,10 +64,6 @@ export default function PublicProfile() {
   const [status, setStatus] = useState({ type: "", text: "" });
 
   useEffect(() => { if (profile) setBreadcrumbContext({ profile }); }, [profile]);
-
-  useEffect(() => {
-    requestedArtistImages.current.clear();
-  }, [handle]);
 
   useEffect(() => {
     setTab(
@@ -137,75 +106,6 @@ export default function PublicProfile() {
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [handle]);
-
-  useEffect(() => {
-    const artistsWithoutImage = followedArtists.filter((artist) => {
-      const artistId = artist.catalogId || artist.id;
-
-      return (
-        artistId &&
-        !hasUsableArtistImage(artist.image) &&
-        !requestedArtistImages.current.has(String(artistId))
-      );
-    });
-
-    if (!artistsWithoutImage.length) return undefined;
-
-    let active = true;
-
-    artistsWithoutImage.forEach((artist) => {
-      requestedArtistImages.current.add(
-        String(artist.catalogId || artist.id),
-      );
-    });
-
-    Promise.all(
-      artistsWithoutImage.map(async (artist) => {
-        const artistId = artist.catalogId || artist.id;
-
-        try {
-          const releases = await getArtistReleases(artistId, 10);
-
-          const latestCover = releases.find((release) =>
-            hasUsableArtistImage(release.image),
-          )?.image;
-
-          return latestCover
-            ? { ...artist, image: latestCover }
-            : artist;
-        } catch {
-          return artist;
-        }
-      }),
-    ).then((artistsWithImages) => {
-      if (!active) return;
-
-      const imagesByArtist = new Map(
-        artistsWithImages
-          .filter((artist) => hasUsableArtistImage(artist.image))
-          .map((artist) => [
-            String(artist.catalogId || artist.id),
-            artist.image,
-          ]),
-      );
-
-      if (!imagesByArtist.size) return;
-
-      setFollowedArtists((current) =>
-        current.map((artist) => {
-          const image = imagesByArtist.get(
-            String(artist.catalogId || artist.id),
-          );
-
-          return image ? { ...artist, image } : artist;
-        }),
-      );
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [followedArtists]);
 
   useEffect(() => {
     if (
@@ -275,88 +175,6 @@ export default function PublicProfile() {
     connections.loaded,
     usuario?._id,
   ]);
-
-  /* MUSIMO_SYNC_ARTIST_COVERS */
-  useEffect(() => {
-    const pendingArtists = followedArtists.filter((artist) => {
-      const artistId = artist.catalogId || artist.id;
-
-      return (
-        artistId &&
-        !consistentArtistCoverRequests.current.has(
-          String(artistId),
-        )
-      );
-    });
-
-    if (!pendingArtists.length) {
-      return undefined;
-    }
-
-    let active = true;
-
-    pendingArtists.forEach((artist) => {
-      consistentArtistCoverRequests.current.add(
-        String(artist.catalogId || artist.id),
-      );
-    });
-
-    Promise.all(
-      pendingArtists.map(async (artist) => {
-        const artistId = artist.catalogId || artist.id;
-
-        try {
-          const releases = await getArtistReleases(
-            artistId,
-            100,
-          );
-
-          return {
-            artistId: String(artistId),
-            image: getConsistentArtistCover(releases),
-          };
-        } catch {
-          return {
-            artistId: String(artistId),
-            image: "",
-          };
-        }
-      }),
-    ).then((resolvedCovers) => {
-      if (!active) {
-        return;
-      }
-
-      const coversByArtist = new Map(
-        resolvedCovers
-          .filter((item) => item.image)
-          .map((item) => [
-            item.artistId,
-            item.image,
-          ]),
-      );
-
-      if (!coversByArtist.size) {
-        return;
-      }
-
-      setFollowedArtists((current) =>
-        current.map((artist) => {
-          const image = coversByArtist.get(
-            String(artist.catalogId || artist.id),
-          );
-
-          return image
-            ? { ...artist, image }
-            : artist;
-        }),
-      );
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [followedArtists]);
 
   async function follow() {
     try {
@@ -641,9 +459,7 @@ function image(event) {
                   to={getArtistUrl(artist)}
                 >
                   <span>
-                    {hasUsableArtistImage(artist.image)
-                      ? <img src={artist.image} alt="" />
-                      : artist.name?.slice(0, 1)}
+                    <ArtistImage artist={artist} />
                   </span>
 
                   <strong>{artist.name}</strong>
@@ -684,7 +500,7 @@ function image(event) {
           {followedArtists.map((artist) => <article key={artist.catalogId || artist.id}>
             <Link to={getArtistUrl(artist)}>
               <span className="profile-artist-avatar">
-                {artist.image && !artist.image.includes("cover-placeholder") ? <img src={artist.image} alt="" /> : artist.name?.slice(0, 1)}
+                <ArtistImage artist={artist} />
               </span>
               <span>
                 <strong>{artist.name}</strong>

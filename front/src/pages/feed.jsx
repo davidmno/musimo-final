@@ -5,6 +5,7 @@ import Footer from "../components/footer";
 import { Avatar, ListCard, ReviewCard } from "../components/content-cards";
 import StatusMessage from "../components/status-message";
 import PageHeader from "../components/page-header";
+import ArtistImage from "../components/artist-image";
 import { useAuth } from "../context/use-auth";
 import { getFeed } from "../services/community.service";
 import { getArtistUrl } from "../services/artist-link.service";
@@ -278,12 +279,7 @@ export default function Feed() {
                       to={getArtistUrl(artist)}
                     >
                       <span className="community-artist-avatar">
-                        {artist.image &&
-                        !artist.image.includes("cover-placeholder") ? (
-                          <img src={artist.image} alt="" />
-                        ) : (
-                          artist.name?.slice(0, 1)
-                        )}
+                        <ArtistImage artist={artist} />
                       </span>
                       <span>
                         <strong>{artist.name}</strong>

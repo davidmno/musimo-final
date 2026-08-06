@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node main.js",
     "dev": "nodemon main.js",
-    "check": "node --check main.js",
+    "check": "node scripts/check-syntax.js",
     "test": "node --test",
     "make-admin": "node make-admin.js",
     "seed:community": "node seed-community.js",

@@ -42,7 +42,9 @@ function groupLabel(value) {
   const today = new Date();
   const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const days = Math.round((startToday - startDate) / 86_400_000);
+  const days = Math.round(
+    (startToday.getTime() - startDate.getTime()) / 86_400_000,
+  );
   if (days === 0) return "Hoy";
   if (days === 1) return "Ayer";
   if (days <= 30) return "Últimos 30 días";

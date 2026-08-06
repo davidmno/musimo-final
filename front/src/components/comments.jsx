@@ -20,15 +20,17 @@ function relativeTime(value, now = Date.now()) {
   const year = 365 * day;
   if (elapsed < minute) return "ahora";
   const formats = [
-    [year, "año", "años"],
-    [month, "mes", "meses"],
-    [day, "día", "días"],
-    [hour, "hora", "horas"],
-    [minute, "minuto", "minutos"],
+    { duration: year, singular: "año", plural: "años" },
+    { duration: month, singular: "mes", plural: "meses" },
+    { duration: day, singular: "día", plural: "días" },
+    { duration: hour, singular: "hora", plural: "horas" },
+    { duration: minute, singular: "minuto", plural: "minutos" },
   ];
-  const [duration, singular, plural] = formats.find(([size]) => elapsed >= size);
-  const amount = Math.floor(elapsed / duration);
-  return `hace ${amount} ${amount === 1 ? singular : plural}`;
+  const format = formats.find(({ duration }) => elapsed >= duration);
+  if (!format) return "ahora";
+
+  const amount = Math.floor(elapsed / format.duration);
+  return `hace ${amount} ${amount === 1 ? format.singular : format.plural}`;
 }
 
 function exactDate(value) {

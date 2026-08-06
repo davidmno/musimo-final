@@ -9,7 +9,7 @@ function isStandalone() {
 }
 
 function isIosDevice() {
-  const platform = window.navigator.userAgentData?.platform || window.navigator.platform || "";
+  const platform = window.navigator.platform || "";
   const userAgent = window.navigator.userAgent || "";
   const touchMac = platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
   return /iPad|iPhone|iPod/i.test(userAgent) || touchMac;

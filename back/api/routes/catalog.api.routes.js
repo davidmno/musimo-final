@@ -8,6 +8,7 @@ router.get("/catalog/new-releases", controller.getNewReleases);
 router.get("/catalog/releases/:id/tracks", controller.getReleaseTracks);
 router.get("/catalog/releases/:id", controller.getRelease);
 router.get("/catalog/artists/:id/releases", controller.getArtistReleases);
+router.get("/catalog/artists/:id/images", controller.getArtistImages);
 router.get("/catalog/artists/:id", controller.getArtist);
 
 export default router;

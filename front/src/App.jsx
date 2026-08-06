@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import InstallAppButton from "./components/install-app-button";
+import { warmApi } from "./services/api";
 
 const landingReviews = [
   {
@@ -32,6 +34,10 @@ const landingReviews = [
 ];
 
 function App() {
+  useEffect(() => {
+    void warmApi();
+  }, []);
+
   return (
     <div className="landing-page">
       <div

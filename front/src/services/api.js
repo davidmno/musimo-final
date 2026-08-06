@@ -75,3 +75,11 @@ export async function apiRequest(endpoint, options = {}) {
     externalSignal?.removeEventListener?.("abort", abortFromExternalSignal);
   }
 }
+
+export function warmApi() {
+  return fetch(`${API_URL}/health`, {
+    method: "GET",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  }).catch(() => null);
+}

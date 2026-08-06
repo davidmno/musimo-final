@@ -22,6 +22,7 @@ import {
   Plus,
   Search,
   Send,
+  Share2,
   Star,
   Trash2,
   UserRound,
@@ -53,6 +54,7 @@ const ICONS = {
   plus: Plus,
   search: Search,
   send: Send,
+  share: Share2,
   star: Star,
   trash: Trash2,
   user: UserRound,
@@ -62,6 +64,19 @@ const ICONS = {
 
 export default function AppIcon({ name, size = 18, label, ...props }) {
   const Icon = ICONS[name];
+
   if (!Icon) return null;
-  return <Icon className="app-icon" size={size} strokeWidth={1.8} role={label ? "img" : undefined} aria-hidden={label ? undefined : true} aria-label={label} focusable="false" {...props} />;
+
+  return (
+    <Icon
+      className="app-icon"
+      size={size}
+      strokeWidth={1.8}
+      role={label ? "img" : undefined}
+      aria-hidden={label ? undefined : true}
+      aria-label={label}
+      focusable="false"
+      {...props}
+    />
+  );
 }

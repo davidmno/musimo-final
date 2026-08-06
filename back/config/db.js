@@ -88,23 +88,38 @@ export async function ensureIndexes() {
         .createIndex({ handle: 1 }, { unique: true, sparse: true }),
       db.collection("reviews").createIndex({ userId: 1, createdAt: -1 }),
       db.collection("reviews").createIndex({ releaseId: 1, createdAt: -1 }),
+      db.collection("reviews").createIndex({ createdAt: -1 }),
       db.collection("lists").createIndex({ ownerId: 1, createdAt: -1 }),
+      db.collection("lists").createIndex({ visibility: 1, createdAt: -1 }),
       db
         .collection("follows")
         .createIndex({ followerId: 1, targetId: 1 }, { unique: true }),
+      db.collection("follows").createIndex({ followerId: 1, createdAt: -1 }),
+      db.collection("follows").createIndex({ targetId: 1, createdAt: -1 }),
       db
         .collection("artist_follows")
         .createIndex({ userId: 1, artistId: 1 }, { unique: true }),
       db
+        .collection("artist_follows")
+        .createIndex({ userId: 1, createdAt: -1 }),
+      db
         .collection("recent_searches")
         .createIndex({ userId: 1, type: 1, itemId: 1 }, { unique: true }),
+      db
+        .collection("recent_searches")
+        .createIndex({ userId: 1, savedAt: -1 }),
       db
         .collection("resonances")
         .createIndex(
           { userId: 1, targetType: 1, targetId: 1 },
           { unique: true },
         ),
-      db.collection("comments").createIndex({ targetType: 1, targetId: 1 }),
+      db
+        .collection("comments")
+        .createIndex({ targetType: 1, targetId: 1, createdAt: 1 }),
+      db
+        .collection("resonances")
+        .createIndex({ targetType: 1, createdAt: -1, targetId: 1 }),
       db
         .collection("to_review")
         .createIndex({ userId: 1, releaseKey: 1 }, { unique: true }),
