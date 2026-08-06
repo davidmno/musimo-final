@@ -8,6 +8,46 @@ const PLACEHOLDER = "/images/cover-placeholder.png";
 const MIN_REQUEST_INTERVAL = 1_050;
 const DEFAULT_MEMORY_TTL = 15 * 60 * 1000;
 const DAY = 24 * 60 * 60 * 1000;
+const PRIORITY_POP_ARTISTS = [
+  // Estados Unidos
+  "Ariana Grande",
+  "Taylor Swift",
+  "Lady Gaga",
+  "Beyoncé",
+  "Madonna",
+  "Miley Cyrus",
+  "Britney Spears",
+  "Katy Perry",
+  "Sabrina Carpenter",
+  "Billie Eilish",
+  "Olivia Rodrigo",
+  "Chappell Roan",
+  "Selena Gomez",
+  "Doja Cat",
+  "SZA",
+
+  // Reino Unido
+  "Dua Lipa",
+  "Charli XCX",
+  "Adele",
+  "Jessie Ware",
+  "RAYE",
+  "Ellie Goulding",
+  "Sam Smith",
+  "Harry Styles",
+  "Ed Sheeran",
+  "Robbie Williams",
+  "Florence + the Machine",
+  "Rick Astley",
+  "Pet Shop Boys",
+  "Sophie Ellis-Bextor",
+
+  // Artistas pop internacionales reconocibles
+  "Kylie Minogue",
+  "Troye Sivan",
+  "Lorde",
+  "Tate McRae",
+];
 const CACHE_POLICY = {
   search: { freshTtl: 60 * 60 * 1000, staleTtl: 14 * DAY },
   release: { freshTtl: 7 * DAY, staleTtl: 90 * DAY },
@@ -531,29 +571,215 @@ export async function getArtistReleases(id, limit = 100) {
   }, CACHE_POLICY.artistReleases);
 }
 
-export async function getNewReleases(limit = 12, options = {}) {
-  const safeLimit = Math.min(Math.max(Number(limit) || 12, 1), 24);
-  const days = Math.min(Math.max(Number(options.days) || 90, 1), 365);
-  const genre = normalizeText(options.genre || "");
+function normalizeNewRelease(release = {}) {
+  return {
+    ...normalizeReleaseGroup(release),
+    primaryType: release["primary-type"] || null,
+  };
+}
+
+function isPriorityPopArtist(release = {}) {
+  const artist = normalizeText(release.artist || "");
+
+  return PRIORITY_POP_ARTISTS.some((name) => {
+    const priorityName = normalizeText(name);
+
+    return (
+      artist === priorityName ||
+      artist.includes(priorityName)
+    );
+  });
+}
+
+function isAlbumRelease(release = {}) {
+  if (release.primaryType) {
+    return normalizeText(release.primaryType) === "album";
+  }
+
+  return release.releaseType === "Álbum";
+}
+
+function curatedReleaseScore(release = {}) {
+  let score = 0;
+
+  // Primero aparecen los artistas más reconocibles.
+  if (isPriorityPopArtist(release)) {
+    score += 100;
+  }
+
+  // Dentro de cada grupo, los álbumes aparecen antes.
+  if (isAlbumRelease(release)) {
+    score += 20;
+  }
+
+  // Las compilaciones quedan relegadas.
+  if (release.releaseType === "Compilación") {
+    score -= 30;
+  }
+
+  return score;
+}
+
+function sortCuratedNewReleases(releases = []) {
+  return [...releases].sort((left, right) => {
+    const priorityDifference =
+      curatedReleaseScore(right) -
+      curatedReleaseScore(left);
+
+    if (priorityDifference) {
+      return priorityDifference;
+    }
+
+    const leftDate = String(
+      left.releaseDate || left.year || "",
+    );
+
+    const rightDate = String(
+      right.releaseDate || right.year || "",
+    );
+
+    const dateDifference =
+      rightDate.localeCompare(leftDate);
+
+    if (dateDifference) {
+      return dateDifference;
+    }
+
+    return String(
+      left.album || left.title || "",
+    ).localeCompare(
+      String(right.album || right.title || ""),
+      "es",
+    );
+  });
+}
+
+export async function getNewReleases(
+  limit = 12,
+  options = {},
+) {
+  const safeLimit = Math.min(
+    Math.max(Number(limit) || 12, 1),
+    24,
+  );
+
+  const days = Math.min(
+    Math.max(Number(options.days) || 90, 1),
+    365,
+  );
+
+  const genre = normalizeText(
+    options.genre || "",
+  );
+
   const end = new Date();
   const start = new Date(end);
+
   start.setDate(start.getDate() - days);
-  const date = (value) => value.toISOString().slice(0, 10);
-  const clauses = [`firstreleasedate:[${date(start)} TO ${date(end)}]`];
-  if (genre) clauses.unshift(`tag:${genre.replace(/[^a-z0-9-]/g, "")}`);
-  const query = encodeURIComponent(clauses.join(" AND "));
+
+  const date = (value) =>
+    value.toISOString().slice(0, 10);
+
+  const dateClause =
+    `firstreleasedate:[${date(start)} TO ${date(end)}]`;
+
+  /*
+   * Búsqueda general:
+   * conserva el género pop y el rango de fechas.
+   */
+  const genreClause = genre
+    ? `tag:${genre.replace(/[^a-z0-9-]/g, "")}`
+    : "";
+
+  const generalQuery = encodeURIComponent(
+    [genreClause, dateClause]
+      .filter(Boolean)
+      .join(" AND "),
+  );
+
+  /*
+   * Búsqueda prioritaria:
+   * busca artistas conocidos aunque el lanzamiento
+   * todavía no tenga correctamente cargada la etiqueta pop.
+   */
+  const priorityArtistsClause =
+    PRIORITY_POP_ARTISTS
+      .map(
+        (artist) =>
+          `artistname:"${artist}"`,
+      )
+      .join(" OR ");
+
+  const priorityQuery = encodeURIComponent(
+    `(${priorityArtistsClause}) AND ${dateClause}`,
+  );
 
   try {
-    const fetchLimit = Math.min(Math.max(safeLimit * 2, safeLimit), 100);
-    const data = await persistentCached(`new:${genre || "all"}:${days}:${date(end)}:${safeLimit}`, () =>
-      queuedMusicBrainzFetch(
-        `/release-group?query=${query}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
-      ),
-      CACHE_POLICY.newReleases,
+    /*
+     * Pedimos más resultados de los que finalmente
+     * mostraremos para poder ordenarlos y seleccionarlos.
+     */
+    const fetchLimit = Math.min(
+      Math.max(safeLimit * 5, 60),
+      100,
     );
-    return sortReleasesNewestFirst(uniqueById(data["release-groups"] || []).map(normalizeReleaseGroup)).slice(0, safeLimit);
+
+    const [priorityResult, generalResult] =
+      await Promise.allSettled([
+        persistentCached(
+          `new:v3:priority:${days}:${date(end)}:${safeLimit}`,
+          () =>
+            queuedMusicBrainzFetch(
+              `/release-group?query=${priorityQuery}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
+            ),
+          CACHE_POLICY.newReleases,
+        ),
+
+        persistentCached(
+          `new:v3:${genre || "all"}:${days}:${date(end)}:${safeLimit}`,
+          () =>
+            queuedMusicBrainzFetch(
+              `/release-group?query=${generalQuery}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
+            ),
+          CACHE_POLICY.newReleases,
+        ),
+      ]);
+
+    const priorityGroups =
+      priorityResult.status === "fulfilled"
+        ? priorityResult.value["release-groups"] || []
+        : [];
+
+    const generalGroups =
+      generalResult.status === "fulfilled"
+        ? generalResult.value["release-groups"] || []
+        : [];
+
+    const groups = [
+      ...priorityGroups,
+      ...generalGroups,
+    ];
+
+    if (!groups.length) {
+      throw new Error(
+        "No se encontraron lanzamientos externos.",
+      );
+    }
+
+    const releases = uniqueById(groups).map(
+      normalizeNewRelease,
+    );
+
+    return sortCuratedNewReleases(
+      releases,
+    ).slice(0, safeLimit);
   } catch {
-    return localNewReleasesFallback(safeLimit);
+    const fallback =
+      await localNewReleasesFallback(safeLimit);
+
+    return sortCuratedNewReleases(
+      fallback,
+    ).slice(0, safeLimit);
   }
 }
 
