@@ -1,26 +1,19 @@
 import express from "express";
-import * as listsController from "../controllers/lists.api.controllers.js";
-import { validateToken } from "../../middlewares/token.validate.js";
-import { validateSchema } from "../../middlewares/validate.schema.js";
-import { listSchema } from "../../schemas/lists.schema.js";
+import * as controller from "../controllers/lists.api.controllers.js";
+import {
+  optionalToken,
+  validateToken,
+} from "../../middlewares/token.validate.js";
 
 const router = express.Router();
 
-router.get("/lists", listsController.getLists);
-router.get("/lists/:id", listsController.getListById);
-
-router.post(
-  "/lists",
-  [validateToken, validateSchema(listSchema)],
-  listsController.createList,
-);
-
-router.put(
-  "/lists/:id",
-  [validateToken, validateSchema(listSchema)],
-  listsController.updateList,
-);
-
-router.delete("/lists/:id", validateToken, listsController.deleteList);
+router.get("/lists", optionalToken, controller.getLists);
+router.get("/lists/:id/comments", optionalToken, controller.getComments);
+router.post("/lists/:id/comments", validateToken, controller.addComment);
+router.post("/lists/:id/resonate", validateToken, controller.resonate);
+router.get("/lists/:id", optionalToken, controller.getListById);
+router.post("/lists", validateToken, controller.createList);
+router.put("/lists/:id", validateToken, controller.updateList);
+router.delete("/lists/:id", validateToken, controller.deleteList);
 
 export default router;

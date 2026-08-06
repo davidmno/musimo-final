@@ -1,0 +1,74 @@
+{
+  "id": "/",
+  "name": "musimo — música, significado y momentos",
+  "short_name": "musimo",
+  "description": "Reseñas, recuerdos y descubrimiento musical desde historias reales.",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "start_url": "/inicio?fuente=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#151411",
+  "theme_color": "#C0451B",
+  "categories": [
+    "music",
+    "social",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Descubrir música",
+      "short_name": "Descubrir",
+      "url": "/buscar?fuente=atajo-pwa",
+      "icons": [
+        {
+          "src": "/pwa-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Crear una lista",
+      "short_name": "Nueva lista",
+      "url": "/listas?nueva=1&fuente=atajo-pwa",
+      "icons": [
+        {
+          "src": "/pwa-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

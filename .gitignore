@@ -14,3 +14,9 @@ front/.env.*.local
 .vscode/
 .idea/
 *.log
+
+# Copias temporales de trabajo
+backups/
+*.antes-de-*
+*.landing-rota
+*.landing-nueva

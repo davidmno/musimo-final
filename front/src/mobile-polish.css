@@ -1,0 +1,2931 @@
+/* Final mobile composition layer. It intentionally loads after the shared responsive contract. */
+@media (max-width: 48rem) {
+  .mobile-app-header { position: relative; display: grid; grid-template-columns: 44px 1fr 44px; }
+  .mobile-app-logo { justify-self: center; }
+  .mobile-app-back, .mobile-app-header-spacer { width: 44px; height: 44px; }
+  .mobile-app-back { display: grid; place-items: center; padding: 0; border: 0; background: transparent; color: var(--text); }
+  .mobile-notification-trigger { justify-self: end; }
+  .mobile-tabbar { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .mobile-context-row, .mobile-editor-toolbar { display: none; }
+  .mobile-detail-toolbar { min-height: 0; margin: 0; }
+  .mobile-detail-toolbar .back-button { display: none; }
+  .mobile-detail-toolbar .icon-button { position: absolute; z-index: 4; top: 16px; right: var(--page-gutter); }
+
+  .section-header, .home-sidebar-heading { min-height: 34px; align-items: center; margin-bottom: 14px; }
+  .section-header h2, .home-sidebar-heading h2 { font-size: 1.3rem; line-height: 1.15; }
+  .section-header a, .section-header .text-button, .home-sidebar-heading a { color: var(--primary); font-size: .78rem; font-weight: 750; text-decoration: none; }
+  .home-sidebar-section, .home-section { margin-bottom: 34px; }
+  .horizontal-grid { gap: 10px; }
+
+  .home-review-queue { gap: 10px; }
+  .home-review-item { min-width: 145px; width: 145px; }
+  .home-review-queue .content-row { min-height: 0; display: block; padding: 0; border: 0; }
+  .home-review-queue .content-row > img { width: 145px; height: 145px; border-radius: 4px; }
+  .home-review-queue .content-row .card-copy { gap: 1px; padding-top: 8px; }
+  .home-review-queue .content-row .card-copy strong { font-size: .82rem; }
+  .home-review-queue .content-row .card-copy span { font-size: .74rem; }
+  .home-review-queue .content-row .card-copy small { display: block; font-size: .72rem; }
+  .home-review-item > button { top: 8px; right: 8px; width: 34px; height: 34px; transform: none; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; background: rgba(17,17,16,.82); color: #fff; }
+  .home-follow-suggestions { gap: 10px; padding-bottom: 4px; }
+  .home-follow-suggestions article { min-width: 132px; width: 132px; min-height: 176px; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 14px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); text-align: center; }
+  .home-follow-suggestions article > a { display: flex; flex-direction: column; gap: 8px; }
+  .home-follow-suggestions article .avatar { --avatar-size: 68px !important; }
+  .home-follow-suggestions article > a > span:last-child { justify-items: center; }
+  .home-follow-suggestions article small { display: none; }
+  .home-follow-suggestions article .btn { width: 100%; }
+
+  .app-page.catalog-search-page { padding-top: 6px !important; }
+  .catalog-search-page .search-page-title { display: none; }
+  .search-page-header { width: 100%; margin: 0 0 18px !important; padding-bottom: 0 !important; }
+  .search-box--large { width: 100%; grid-template-columns: auto minmax(0, 1fr) 36px auto; gap: 2px; }
+  .search-box--large .search-clear { position: static; width: 34px; margin: 0; }
+  .search-box--large .btn { margin-left: 2px; }
+  .filter-pills { width: 100%; flex-wrap: nowrap !important; gap: 20px; overflow-x: auto; scrollbar-width: none; }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .filter-pills button { flex: 0 0 auto; }
+  .search-recent-section { width: 100%; }
+  .search-results { gap: 30px; }
+  .search-results section > h2 { margin-bottom: 12px; }
+  .search-results .result-grid, .search-results .people-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  .search-results .release-tile, .search-results .list-tile { min-height: 74px; display: grid; grid-template-columns: 58px minmax(0, 1fr) 24px; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); }
+  .search-results .release-tile > img { width: 58px; height: 58px; border-radius: 4px; }
+  .search-results .release-tile .card-copy { padding: 0; }
+  .search-results .list-tile .cover-stack { width: 58px; height: 58px; }
+  .search-results .card-enter-icon, .search-results .artist-result .card-enter-icon { display: block; justify-self: end; color: var(--muted); }
+  .search-results .person-result { min-height: 72px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); border-radius: 0; }
+  .search-results .artist-result { grid-template-columns: 52px minmax(0, 1fr) 24px; }
+  .search-results .artist-avatar { width: 52px; height: 52px; }
+  .person-result-user { grid-template-columns: minmax(0, 1fr) auto; }
+  .person-result-user > a { grid-template-columns: 52px minmax(0, 1fr); }
+  .person-result-user p { display: none; }
+
+  .release-sticky-column .release-hero-cover { width: min(58vw, 220px) !important; margin-bottom: 18px; }
+  .release-detail-header { min-height: 0; align-items: center !important; padding-bottom: 20px; text-align: center !important; }
+  .release-detail-header > * { margin-inline: auto !important; }
+  .release-detail-header h1 { font-size: clamp(2rem, 10vw, 2.7rem); }
+  .release-sidebar-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .release-sidebar-actions .btn { min-width: 0; padding-inline: 8px; }
+  .more-releases-grid { gap: 8px; margin-right: calc(var(--page-gutter) * -1); padding-right: var(--page-gutter); }
+  .more-releases-grid > * { width: 128px; min-width: 128px; }
+  .artist-detail-page .result-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 8px; }
+  .artist-detail-page .release-tile .card-copy strong, .artist-detail-page .release-tile .card-copy span, .artist-detail-page .release-tile .card-copy small { font-size: .68rem; }
+
+  .review-editor-page .creation-editor-heading { display: none; }
+  .review-editor-columns { display: flex; flex-direction: column; }
+  .review-editor-context, .review-editor-story { display: contents; }
+  .review-editor-context > .creation-section-heading { display: none; }
+  .review-selected-release, .review-editor-context > .loading-text { order: 1; }
+  .review-editor-story > .creation-section-heading { order: 3; margin-top: 26px; }
+  .review-editor-story > label { order: 4; }
+  .review-page-rating { order: 5; }
+  .review-editor-context > .review-optional-field:not(.review-page-rating) { order: 6; }
+  .review-moment-block { order: 7; }
+  .review-editor-page .review-optional-field { margin-top: 28px; }
+  .review-editor-page { padding-top: 14px; padding-bottom: calc(var(--mobile-tabbar-height) + 30px); }
+  .review-editor-page .mobile-sticky-submit { position: static; width: 100%; min-height: 48px; margin-top: 30px; box-shadow: none; }
+  .review-editor-page .mobile-sticky-submit .btn { width: 100%; }
+
+  .app-page > .status-banner--success { position: fixed; z-index: 2900; right: 12px; bottom: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom) + 12px); left: 12px; margin: 0; box-shadow: 0 12px 32px rgba(0,0,0,.45); }
+  .moment-card { padding: 22px 0 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: transparent; }
+  .comment-composer { grid-template-columns: 32px minmax(0, 1fr); }
+  .comment-composer-body > label { min-height: 32px; display: flex; align-items: center; }
+
+  .public-profile-page { padding-top: 16px; }
+  .public-profile-header { grid-template-columns: 86px minmax(0, 1fr); gap: 14px 16px; padding-bottom: 24px; }
+  .public-profile-header .profile-photo { width: 86px; height: 86px; }
+  .public-profile-identity .page-hero-trail { display: none; }
+  .public-profile-identity .profile-title-line { align-items: flex-start; gap: 8px; }
+  .public-profile-identity .profile-title-line h1 { font-size: 1.75rem; }
+  .public-profile-identity .profile-title-line > div:first-child { min-width: 0; }
+  .public-profile-identity .profile-title-line > div:last-child .btn { padding: 8px 11px; }
+  .public-profile-identity > p { margin-top: 8px; }
+  .public-profile-counts { grid-column: 1 / -1; justify-self: start; gap: 24px; }
+  .public-profile-counts button { align-items: flex-start; }
+  .public-profile-tabs { gap: 24px; margin-bottom: 28px; }
+  .public-profile-tabs button { flex: 0 0 auto; }
+  .public-profile-overview { gap: 34px; }
+  .public-profile-page .profile-followed-artists { order: 4; }
+  .public-profile-page .profile-saved-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
+  .public-profile-page .profile-review-list, .public-profile-page .profile-list-list { gap: 20px; }
+  .public-profile-page .profile-tab-panel { padding-top: 0; }
+
+  .create-sheet .bottom-sheet-handle, .create-sheet .bottom-sheet-header { display: none; }
+  .create-sheet { padding-top: 10px; }
+  .create-sheet-actions a { min-height: 64px; }
+}
+
+@media (min-width: 30.01rem) and (max-width: 48rem) {
+  .artist-detail-page .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 14px; }
+}
+
+@media (max-width: 48rem) {
+  .social-page:not(.home-page) > .page-hero,
+  .notifications-page > .page-hero { display: none; }
+
+  .home-section-reviews .horizontal-grid {
+    grid-auto-columns: calc(100vw - 48px) !important;
+    gap: 16px;
+  }
+
+  .home-section-reviews .story-tile {
+    width: 100% !important;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .home-section-reviews .story-tile-main,
+  .home-section-reviews .story-release-copy,
+  .home-section-reviews .story-excerpt {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .notifications-page {
+    padding-top: 12px !important;
+  }
+
+  .notification-list > a {
+    grid-template-columns: 36px minmax(0, 1fr) 50px;
+    gap: 10px;
+  }
+
+  .notification-list > a > .avatar {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+  }
+
+  .notification-context-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .notification-list > a:not(:has(.notification-context-image)) {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+}
+
+/* MUSIMO: ajustes de detalle de lista y enlaces de Inicio */
+.home-page .section-header > a,
+.home-page .home-sidebar-heading > a {
+  color: var(--primary);
+  font-size: .78rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.home-page .section-header > a:hover,
+.home-page .section-header > a:focus-visible,
+.home-page .home-sidebar-heading > a:hover,
+.home-page .home-sidebar-heading > a:focus-visible {
+  color: var(--primary-hover);
+  text-decoration: none;
+}
+
+.list-detail-header > p:empty {
+  display: none;
+}
+
+.list-detail-header .detail-kicker {
+  margin-bottom: 0;
+}
+
+.list-detail-meta {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.list-detail-meta > span {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.list-detail-meta > span::before {
+  content: "–";
+  margin-right: 8px;
+  color: var(--muted);
+}
+/* FIN MUSIMO: ajustes de detalle de lista y enlaces de Inicio */
+
+/* MUSIMO: enlaces de secciones y Leer más */
+
+/* Acciones breves de encabezados: Inicio, perfil y secciones equivalentes */
+.section-header > a,
+.section-header > .text-button,
+.home-sidebar-heading > a {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: .78rem;
+  font-weight: 750;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.section-header > a:hover,
+.section-header > a:focus-visible,
+.section-header > a:active,
+.section-header > .text-button:hover,
+.section-header > .text-button:focus-visible,
+.section-header > .text-button:active,
+.home-sidebar-heading > a:hover,
+.home-sidebar-heading > a:focus-visible,
+.home-sidebar-heading > a:active {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  text-decoration: none;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Acción Leer más de todas las tarjetas de reseñas */
+.story-read-more {
+  color: var(--secondary);
+  text-decoration: none;
+}
+
+.story-tile-main:hover .story-read-more,
+.story-tile-main:focus-visible .story-read-more {
+  color: var(--secondary-hover);
+  text-decoration: none;
+}
+
+/* FIN MUSIMO: enlaces de secciones y Leer más */
+
+/* MUSIMO: Por reseñar sin separadores */
+.home-review-queue .content-row {
+  border-bottom: 0;
+}
+/* FIN MUSIMO: Por reseñar sin separadores */
+
+/* MUSIMO: mejoras tipográficas del sidebar y fechas de lanzamientos */
+
+/* Ajustes exclusivos de escritorio */
+@media (min-width: 48.0625rem) {
+  .home-sidebar-heading h2 {
+    font-size: 1rem;
+  }
+
+  .home-review-queue .card-copy strong {
+    font-size: .82rem;
+  }
+
+  .home-review-queue .card-copy span {
+    font-size: .74rem;
+  }
+
+  .home-follow-suggestions strong {
+    font-size: .8rem;
+  }
+
+  .home-follow-suggestions small {
+    font-size: .72rem;
+  }
+}
+
+/* Fecha de las tarjetas de Nuevos lanzamientos */
+.home-section-new-releases .release-tile .card-copy small {
+  color: #8D619F;
+  font-weight: 650;
+}
+
+/* FIN MUSIMO: mejoras tipográficas del sidebar y fechas de lanzamientos */
+
+/* MUSIMO: búsqueda lateral, comunidad, artistas y perfil */
+
+/* Buscar: resultados a la izquierda y recientes fijas a la derecha */
+.search-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 840px) minmax(230px, 280px);
+  justify-content: space-between;
+  align-items: start;
+  gap: clamp(32px, 5vw, 64px);
+}
+
+.search-main-column {
+  min-width: 0;
+}
+
+.search-recent-sidebar {
+  position: sticky;
+  top: 92px;
+  display: block;
+}
+
+.search-recent-panel .recent-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.search-recent-panel .recent-item {
+  background: transparent;
+}
+
+.search-recent-panel .recent-item > a {
+  padding: 6px 0;
+}
+
+/* Encabezados de las barras laterales */
+.community-connections header {
+  justify-content: space-between;
+}
+
+.community-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.community-heading > span {
+  display: grid;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid rgba(141, 97, 159, .62);
+  border-radius: 999px;
+  background: rgba(141, 97, 159, .16);
+  color: var(--secondary);
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.community-header-link {
+  flex: 0 0 auto;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: .74rem;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.community-header-link:hover,
+.community-header-link:focus-visible {
+  background: transparent;
+  color: var(--primary-hover);
+  text-decoration: none;
+}
+
+/* Artistas listados de la misma manera que las personas */
+.community-artist-list .community-artist-avatar {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-elevated);
+  color: var(--text);
+  font-weight: 750;
+}
+
+.community-artist-list .community-artist-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Controles de Comunidad alineados */
+.community-feed-controls {
+  align-items: center;
+}
+
+.community-feed-controls .filter-pills {
+  min-height: 40px;
+}
+
+.community-audience-filter select {
+  height: 40px;
+  min-height: 40px;
+  margin-top: 0;
+  padding: 0 36px 0 12px;
+}
+
+/* Imagen circular del artista */
+.artist-page-header .artist-portrait {
+  width: 104px;
+  height: 104px;
+  min-width: 104px;
+  min-height: 104px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.artist-page-header .artist-portrait > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* Lista de artistas del perfil */
+.profile-artist-avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-elevated);
+  color: var(--text);
+  font-weight: 750;
+}
+
+.profile-artist-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (min-width: 56.3125rem) {
+  .search-recent-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 56.25rem) {
+  .search-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .search-recent-sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .community-feed-controls,
+  .community-audience-filter {
+    align-items: stretch;
+  }
+
+  .community-audience-filter select {
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .artist-page-header .artist-portrait {
+    width: 82px;
+    height: 82px;
+    min-width: 82px;
+    min-height: 82px;
+  }
+}
+
+/* FIN MUSIMO: búsqueda lateral, comunidad, artistas y perfil */
+
+/* MUSIMO: avatar de artista perfectamente circular */
+.artist-hero.artist-hero-compact.artist-page-header
+  .artist-monogram.artist-portrait {
+  --artist-avatar-size: 104px;
+
+  inline-size: var(--artist-avatar-size) !important;
+  block-size: var(--artist-avatar-size) !important;
+  min-inline-size: var(--artist-avatar-size) !important;
+  min-block-size: var(--artist-avatar-size) !important;
+  max-inline-size: var(--artist-avatar-size) !important;
+  max-block-size: var(--artist-avatar-size) !important;
+  flex: 0 0 var(--artist-avatar-size) !important;
+  aspect-ratio: 1 / 1 !important;
+  place-self: center start;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 50% !important;
+  clip-path: circle(50% at 50% 50%);
+  box-sizing: border-box;
+}
+
+.artist-hero.artist-hero-compact.artist-page-header
+  .artist-monogram.artist-portrait > img {
+  inline-size: 100% !important;
+  block-size: 100% !important;
+  min-inline-size: 100%;
+  min-block-size: 100%;
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  display: block;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+  border-radius: inherit;
+}
+
+@media (max-width: 48rem) {
+  .artist-hero.artist-hero-compact.artist-page-header
+    .artist-monogram.artist-portrait {
+    --artist-avatar-size: 82px;
+  }
+}
+/* FIN MUSIMO: avatar de artista perfectamente circular */
+
+/* MUSIMO: ajuste final de la página Buscar */
+
+/* Barra, filtros y resultados permanecen en la columna izquierda. */
+.search-main-column .search-page-header {
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+/* Evita el espacio excesivo antes de Lanzamientos y otras categorías. */
+.search-main-column .search-results {
+  gap: var(--space-7);
+}
+
+.search-main-column .search-results > section {
+  margin: 0 0 var(--space-8);
+}
+
+/* La barra lateral comienza a la altura de la barra de búsqueda. */
+.search-recent-sidebar {
+  align-self: start;
+}
+
+/* Listado compacto, similar a las filas de Por reseñar. */
+.search-recent-panel {
+  padding-bottom: 18px;
+}
+
+.search-recent-panel header {
+  margin-bottom: 10px;
+}
+
+.search-recent-panel .recent-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+.search-recent-panel .recent-item {
+  min-height: 0;
+  padding: 4px 0;
+  gap: 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+}
+
+.search-recent-panel .recent-item:hover {
+  background: var(--surface);
+}
+
+.search-recent-panel .recent-item > a {
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 9px;
+  padding: 0;
+}
+
+.search-recent-panel .recent-thumb {
+  width: 38px;
+  height: 38px;
+}
+
+.search-recent-panel .recent-item strong {
+  font-size: .78rem;
+  line-height: 1.15;
+}
+
+.search-recent-panel .recent-item small {
+  font-size: .7rem;
+  line-height: 1.15;
+}
+
+.search-recent-panel .recent-item > button {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+/* FIN MUSIMO: ajuste final de la página Buscar */
+
+/* MUSIMO: botones compactos de A quién seguir */
+.home-follow-suggestions > article > button {
+  inline-size: 74px !important;
+  min-inline-size: 74px !important;
+  max-inline-size: 74px !important;
+  block-size: 34px;
+  min-block-size: 34px;
+  padding: 0 7px !important;
+  border-radius: 9px;
+  font-size: .72rem;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+/* FIN MUSIMO: botones compactos de A quién seguir */
+
+/* MUSIMO: columna de artistas del perfil */
+/* La columna del resumen reutiliza el ritmo visual de Búsquedas recientes. */
+.public-profile-page .profile-followed-artists {
+  align-self: start;
+  padding-left: 0;
+  border-left: 0;
+}
+
+.profile-followed-artists-panel {
+  padding-bottom: 18px;
+}
+
+.profile-followed-artists-panel header {
+  margin-bottom: 10px;
+}
+
+.profile-followed-artists-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.profile-followed-artists-list a {
+  min-height: 44px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  padding: 0;
+}
+
+.profile-followed-artists-list a > span {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+
+.profile-followed-artists-list strong {
+  font-size: .78rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 56.25rem) {
+  .public-profile-page .profile-followed-artists {
+    position: static;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+    border: 0;
+  }
+}
+/* FIN MUSIMO: columna de artistas del perfil */
+
+/* MUSIMO: detalle de lanzamiento y reseña unificados */
+
+/* Nombre del artista en las fichas de lanzamiento y reseña */
+.release-detail-header > .artist-link,
+.review-detail-content .story-detail > header > .artist-link,
+.release-detail-header > .artist-link:hover,
+.release-detail-header > .artist-link:focus-visible,
+.release-detail-header > .artist-link:active,
+.review-detail-content .story-detail > header > .artist-link:hover,
+.review-detail-content .story-detail > header > .artist-link:focus-visible,
+.review-detail-content .story-detail > header > .artist-link:active {
+  color: #8D619F;
+  text-decoration: none;
+}
+
+/* Autor de la reseña sin separación excesiva */
+.story-author-heading .story-author-copy {
+  display: inline;
+}
+
+.story-author-heading .story-author-copy > a,
+.story-author-heading .story-author-copy > a:hover,
+.story-author-heading .story-author-copy > a:focus-visible,
+.story-author-heading .story-author-copy > a:active {
+  color: #C0451B;
+  text-decoration: none;
+}
+
+/* Portadas unificadas en escritorio */
+@media (min-width: 48.0625rem) {
+  .release-detail-shell,
+  .review-detail-shell {
+    grid-template-columns: 286px minmax(0, 1fr);
+  }
+
+  .release-sticky-column,
+  .review-release-context,
+  .review-detail-cover-link {
+    width: 286px;
+  }
+
+  .release-sticky-column .release-hero-cover,
+  .review-detail-cover-link img {
+    width: 286px !important;
+    height: 286px !important;
+    max-width: 286px !important;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+  }
+}
+
+/* FIN MUSIMO: detalle de lanzamiento y reseña unificados */
+
+/* MUSIMO: artistas consistentes y metadato de reseña */
+
+/* Comunidad sin cantidades al lado de sus categorías */
+.social-page .community-connections header > span,
+.social-page .community-connections .community-heading > span {
+  display: none !important;
+}
+
+/* Ver todos alineado en la columna de artistas del perfil */
+.profile-followed-artists-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Metadato del lanzamiento seleccionado */
+.review-selected-release small {
+  color: #C0451B !important;
+}
+
+/* FIN MUSIMO: artistas consistentes y metadato de reseña */
+
+/* MUSIMO: Ver todos sin salto en artistas del perfil */
+.profile-followed-artists-panel > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-followed-artists-panel > header h2 {
+  min-width: 0;
+  margin: 0;
+}
+
+.profile-followed-artists-panel .community-header-link {
+  display: inline-flex;
+  width: max-content !important;
+  min-width: max-content !important;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap !important;
+  word-break: keep-all;
+  line-height: 1;
+}
+/* FIN MUSIMO: Ver todos sin salto en artistas del perfil */
+
+/* MUSIMO: perfil mobile, carrusel y editor completo */
+@media (max-width: 48rem) {
+  /* Foto a la izquierda y datos ordenados en la columna derecha. */
+  .public-profile-header {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-areas:
+      "photo identity"
+      "photo bio"
+      "photo counts"
+      "photo action";
+    align-items: start;
+    column-gap: 16px;
+    row-gap: 10px;
+    padding-bottom: 24px;
+  }
+
+  .public-profile-header .profile-photo-wrap {
+    grid-area: photo;
+    align-self: start;
+  }
+
+  .public-profile-header .profile-photo {
+    width: 88px;
+    height: 88px;
+  }
+
+  /* Evita dos accesos distintos para editar en mobile. */
+  .public-profile-header .profile-photo-edit {
+    display: none;
+  }
+
+  .public-profile-header .public-profile-identity,
+  .public-profile-header .profile-title-line {
+    display: contents;
+  }
+
+  .public-profile-header .page-hero-trail {
+    display: none;
+  }
+
+  .public-profile-header .profile-title-line > div:first-child {
+    grid-area: identity;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 8px;
+    row-gap: 2px;
+  }
+
+  .public-profile-header .profile-title-line h1,
+  .public-profile-header .profile-title-line p {
+    margin: 0;
+  }
+
+  .public-profile-header .profile-title-line h1 {
+    font-size: 1.72rem;
+    line-height: 1.05;
+  }
+
+  .public-profile-header .public-profile-identity > p {
+    grid-area: bio;
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .public-profile-header .public-profile-counts {
+    grid-area: counts;
+    grid-column: auto;
+    justify-self: start;
+    align-self: start;
+    gap: 26px;
+    margin: 0;
+  }
+
+  .public-profile-header .public-profile-counts button {
+    align-items: flex-start;
+  }
+
+  .public-profile-header .profile-title-line > div:last-child {
+    grid-area: action;
+    justify-self: start;
+  }
+
+  .public-profile-header .profile-title-line > div:last-child .btn {
+    width: auto;
+    min-height: 38px;
+    padding: 8px 13px;
+  }
+
+  /* Por reseñar en la vista general: carrusel horizontal compacto. */
+  .public-profile-overview .profile-saved-section {
+    min-width: 0;
+  }
+
+  .public-profile-overview
+    .profile-saved-section
+    .profile-saved-grid {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column;
+    grid-auto-columns: 120px;
+    gap: 12px !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 12px;
+    scroll-snap-type: inline mandatory;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .public-profile-overview
+    .profile-saved-section
+    .profile-saved-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .public-profile-overview
+    .profile-saved-section
+    .profile-saved-grid > article {
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .public-profile-overview
+    .profile-saved-section
+    .release-tile
+    .card-copy {
+    padding-top: 7px;
+  }
+
+  .public-profile-overview
+    .profile-saved-section
+    .release-tile
+    .card-copy strong {
+    font-size: .74rem;
+  }
+
+  .public-profile-overview
+    .profile-saved-section
+    .release-tile
+    .card-copy span,
+  .public-profile-overview
+    .profile-saved-section
+    .release-tile
+    .card-copy small {
+    font-size: .68rem;
+  }
+
+  .public-profile-overview
+    .profile-saved-section
+    .profile-card-remove {
+    top: 4px;
+    right: 4px;
+    width: 25px;
+    height: 25px;
+  }
+
+  /* Solapa Por reseñar: tres portadas por fila. */
+  .public-profile-page
+    .profile-tab-panel
+    .profile-saved-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px 8px !important;
+    overflow: visible;
+  }
+
+  .public-profile-page
+    .profile-tab-panel
+    .profile-saved-grid
+    .release-tile
+    .card-copy {
+    padding-top: 6px;
+  }
+
+  .public-profile-page
+    .profile-tab-panel
+    .profile-saved-grid
+    .release-tile
+    .card-copy strong {
+    font-size: .7rem;
+  }
+
+  .public-profile-page
+    .profile-tab-panel
+    .profile-saved-grid
+    .release-tile
+    .card-copy span,
+  .public-profile-page
+    .profile-tab-panel
+    .profile-saved-grid
+    .release-tile
+    .card-copy small {
+    font-size: .64rem;
+  }
+
+  .public-profile-page
+    .profile-tab-panel
+    .profile-saved-grid
+    .profile-card-remove {
+    top: 3px;
+    right: 3px;
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Editar perfil se integra como pantalla completa móvil. */
+  .profile-editor-backdrop {
+    z-index: 7000;
+    display: block;
+    padding: 0 !important;
+    overflow: hidden;
+    background: var(--bg);
+    backdrop-filter: none;
+  }
+
+  .profile-account-editor {
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh !important;
+    display: grid;
+    align-content: start;
+    gap: 17px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 20px calc(28px + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+    background: var(--bg);
+    box-shadow: none;
+  }
+
+  .profile-account-editor .profile-editor-heading {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    margin: 0 -20px 2px;
+    padding:
+      calc(14px + env(safe-area-inset-top))
+      20px
+      14px;
+    background: var(--bg);
+  }
+
+  .profile-account-editor .two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-account-editor .form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .profile-account-editor .form-actions .btn {
+    width: 100%;
+  }
+}
+/* FIN MUSIMO: perfil mobile, carrusel y editor completo */
+
+/* MUSIMO: perfil fiel a referencia desktop y mobile */
+
+/* =========================================================
+   ESCRITORIO
+   Avatar a la izquierda, identidad en el centro y métricas
+   a la derecha, siguiendo la referencia compartida.
+   ========================================================= */
+
+@media (min-width: 48.0625rem) {
+  .public-profile-page .public-profile-header {
+    display: grid !important;
+    grid-template-columns: 132px minmax(0, 1fr) auto !important;
+    grid-template-areas: "photo identity counts";
+    align-items: center !important;
+    column-gap: 32px !important;
+    min-height: 190px;
+    padding: 34px 0 28px !important;
+  }
+
+  .public-profile-header .profile-photo-wrap {
+    grid-area: photo;
+    position: relative;
+    width: 132px;
+    height: 132px;
+  }
+
+  .public-profile-header .profile-photo {
+    width: 132px !important;
+    height: 132px !important;
+    min-width: 132px;
+    min-height: 132px;
+  }
+
+  .public-profile-header .public-profile-identity {
+    grid-area: identity;
+    display: block !important;
+    min-width: 0;
+  }
+
+  .public-profile-header .profile-title-line {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 15px !important;
+    margin: 7px 0 11px;
+  }
+
+  .public-profile-header .profile-title-line > div:first-child {
+    display: flex !important;
+    align-items: baseline !important;
+    flex-wrap: wrap;
+    gap: 9px !important;
+  }
+
+  .public-profile-header .profile-title-line h1 {
+    margin: 0;
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .public-profile-header .profile-title-line p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .public-profile-header .public-profile-identity > p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .public-profile-header.is-own-profile
+    .profile-title-line
+    > div:last-child
+    .btn {
+    min-height: auto !important;
+    padding: 2px 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--secondary) !important;
+    box-shadow: none !important;
+    font-size: .78rem;
+  }
+
+  .public-profile-header.is-own-profile
+    .profile-title-line
+    > div:last-child
+    .btn::before {
+    content: "✎";
+    margin-right: 6px;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .public-profile-header.is-own-profile
+    .profile-title-line
+    > div:last-child
+    .btn:hover,
+  .public-profile-header.is-own-profile
+    .profile-title-line
+    > div:last-child
+    .btn:focus-visible {
+    color: var(--secondary-hover) !important;
+    transform: none;
+  }
+
+  .public-profile-header .public-profile-counts {
+    grid-area: counts;
+    display: flex !important;
+    align-items: center;
+    justify-self: end;
+    gap: 38px !important;
+    margin: 0;
+  }
+
+  .public-profile-header .public-profile-counts button {
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+    padding: 4px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   Información a la izquierda, avatar arriba a la derecha,
+   métricas debajo y lápiz funcional sobre la foto.
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  .public-profile-page .public-profile-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 84px !important;
+    grid-template-areas:
+      "identity photo"
+      "counts photo" !important;
+    align-items: start !important;
+    column-gap: 18px !important;
+    row-gap: 13px !important;
+    min-height: 158px;
+    padding: 25px 4px 27px !important;
+  }
+
+  .public-profile-header .public-profile-identity {
+    grid-area: identity;
+    display: block !important;
+    min-width: 0;
+  }
+
+  .public-profile-header .page-hero-trail {
+    display: none !important;
+  }
+
+  .public-profile-header .profile-title-line {
+    display: block !important;
+    margin: 0 !important;
+  }
+
+  .public-profile-header .profile-title-line > div:first-child {
+    display: block !important;
+    grid-area: auto !important;
+    min-width: 0;
+  }
+
+  .public-profile-header .profile-title-line h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.05;
+  }
+
+  .public-profile-header .profile-title-line p {
+    margin: 5px 0 0;
+    color: var(--text);
+    font-size: .82rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .public-profile-header .public-profile-identity > p {
+    margin: 9px 0 0;
+    color: var(--text);
+    font-size: .88rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* En el perfil propio se usa exclusivamente el lápiz de la foto. */
+  .public-profile-header.is-own-profile
+    .profile-title-line
+    > div:last-child {
+    display: none !important;
+  }
+
+  /* En perfiles ajenos se conserva el botón Seguir/Siguiendo. */
+  .public-profile-header:not(.is-own-profile)
+    .profile-title-line
+    > div:last-child {
+    display: block !important;
+    margin-top: 12px;
+  }
+
+  .public-profile-header .profile-photo-wrap {
+    grid-area: photo;
+    position: relative;
+    width: 84px;
+    height: 84px;
+    margin: 3px 0 0;
+    justify-self: end;
+    align-self: start;
+  }
+
+  .public-profile-header .profile-photo {
+    width: 84px !important;
+    height: 84px !important;
+    min-width: 84px !important;
+    min-height: 84px !important;
+    max-width: 84px !important;
+    max-height: 84px !important;
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Restaura el lápiz funcional sobre la foto. */
+  .public-profile-header .profile-photo-edit {
+    position: absolute !important;
+    right: -2px !important;
+    bottom: -2px !important;
+    z-index: 3;
+    width: 31px !important;
+    height: 31px !important;
+    min-width: 31px !important;
+    min-height: 31px !important;
+    display: grid !important;
+    place-items: center;
+    padding: 0 !important;
+    border: 2px solid var(--bg) !important;
+    border-radius: 50% !important;
+    background: var(--primary) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .public-profile-header .profile-photo-edit:hover,
+  .public-profile-header .profile-photo-edit:focus-visible {
+    background: var(--primary-hover) !important;
+    transform: none;
+  }
+
+  .public-profile-header .public-profile-counts {
+    grid-area: counts;
+    grid-column: auto !important;
+    display: flex !important;
+    align-items: center;
+    justify-self: start !important;
+    gap: 21px !important;
+    margin: 0 !important;
+  }
+
+  .public-profile-header .public-profile-counts button {
+    display: flex !important;
+    align-items: baseline;
+    gap: 4px;
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+
+  .public-profile-header .public-profile-counts strong {
+    color: var(--text);
+    font-size: .88rem;
+    line-height: 1;
+  }
+
+  .public-profile-header .public-profile-counts span {
+    display: inline !important;
+    color: var(--muted);
+    font-size: .76rem;
+    line-height: 1;
+    text-align: left;
+  }
+}
+
+/* FIN MUSIMO: perfil fiel a referencia desktop y mobile */
+
+/* MUSIMO: editor de perfil contenido con navegación visible */
+
+/* Encabezado sin acción duplicada de cierre */
+.profile-editor-heading {
+  justify-content: flex-start;
+}
+
+/* Escritorio: modal centrado y contenido */
+@media (min-width: 48.0625rem) {
+  .profile-editor-backdrop {
+    z-index: 500;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, .76);
+    backdrop-filter: blur(4px);
+  }
+
+  .profile-account-editor {
+    width: min(520px, calc(100vw - 40px)) !important;
+    max-width: 520px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: min(720px, calc(100dvh - 40px)) !important;
+    display: grid;
+    align-content: start;
+    gap: 17px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 20px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    background: var(--surface) !important;
+    box-shadow: var(--shadow-soft) !important;
+  }
+
+  .profile-account-editor .profile-editor-heading {
+    position: static;
+    margin: 0 0 2px;
+    padding: 0 0 14px;
+    background: transparent;
+  }
+}
+
+/* Mobile: formulario contenido y menú inferior visible */
+@media (max-width: 48rem) {
+  .profile-editor-backdrop {
+    z-index: 900;
+    inset:
+      0
+      0
+      calc(64px + env(safe-area-inset-bottom))
+      0;
+    display: grid;
+    place-items: start center;
+    padding: 12px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, .76);
+    backdrop-filter: blur(4px);
+  }
+
+  .profile-account-editor {
+    width: 100% !important;
+    max-width: 460px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    display: grid;
+    align-content: start;
+    gap: 17px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 20px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    background: var(--surface) !important;
+    box-shadow: var(--shadow-soft) !important;
+    overscroll-behavior: contain;
+  }
+
+  .profile-account-editor .profile-editor-heading {
+    position: sticky;
+    z-index: 2;
+    top: -20px;
+    margin: -20px -20px 2px;
+    padding:
+      calc(18px + env(safe-area-inset-top))
+      20px
+      14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .profile-account-editor .form-actions {
+    padding-bottom: 4px;
+  }
+}
+
+/* FIN MUSIMO: editor de perfil contenido con navegación visible */
+
+/* MUSIMO: cards de artistas en resultados de búsqueda */
+
+/* Card limpia: avatar, nombre y acceso. */
+.catalog-search-page .artist-result {
+  display: grid !important;
+  grid-template-columns: 52px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  min-height: 74px;
+  padding: 10px 12px;
+}
+
+.catalog-search-page .artist-result .artist-avatar {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--surface-elevated);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.catalog-search-page .artist-result .artist-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.catalog-search-page .artist-result-copy {
+  display: block;
+  min-width: 0;
+}
+
+.catalog-search-page .artist-result-copy strong {
+  display: block;
+  margin: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.catalog-search-page
+  .artist-result
+  .card-enter-icon {
+  justify-self: end;
+}
+
+@media (max-width: 48rem) {
+  .catalog-search-page .artist-result {
+    grid-template-columns: 46px minmax(0, 1fr) 18px;
+    min-height: 66px;
+    padding: 9px 10px;
+  }
+
+  .catalog-search-page .artist-result .artist-avatar {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
+  }
+}
+
+/* FIN MUSIMO: cards de artistas en resultados de búsqueda */
+
+/* MUSIMO: centrar botón para limpiar búsqueda */
+.catalog-search-page .search-box--large .search-clear {
+  position: static;
+  inline-size: 34px !important;
+  block-size: 34px !important;
+  min-inline-size: 34px !important;
+  min-block-size: 34px !important;
+  max-inline-size: 34px !important;
+  max-block-size: 34px !important;
+  flex: 0 0 34px;
+  align-self: center;
+  display: grid !important;
+  place-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0;
+}
+
+.catalog-search-page .search-box--large .search-clear svg {
+  display: block;
+  margin: 0;
+  transform: none;
+}
+/* FIN MUSIMO: centrar botón para limpiar búsqueda */
+
+/* MUSIMO: separación del editor móvil */
+@media (max-width: 48rem) {
+  /*
+   * El editor comienza debajo del header principal
+   * y termina antes de la navegación inferior.
+   */
+  .profile-editor-backdrop {
+    inset:
+      58px
+      0
+      calc(72px + env(safe-area-inset-bottom))
+      0 !important;
+    padding: 12px !important;
+    overflow: hidden;
+  }
+
+  .profile-account-editor {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    padding:
+      0
+      20px
+      calc(28px + env(safe-area-inset-bottom))
+      !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-padding-top: 88px;
+    scroll-padding-bottom: 100px;
+  }
+
+  /*
+   * Encabezado interno visible, sin márgenes negativos
+   * que lo escondan detrás del header de la aplicación.
+   */
+  .profile-account-editor .profile-editor-heading {
+    position: sticky !important;
+    z-index: 3;
+    top: 0 !important;
+    margin: 0 -20px 8px !important;
+    padding: 18px 20px 15px !important;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface) !important;
+  }
+
+  .profile-account-editor .profile-editor-heading p,
+  .profile-account-editor .profile-editor-heading h2 {
+    margin-left: 0;
+  }
+
+  /*
+   * Espacio de cierre para que Cancelar y Guardar cambios
+   * no queden pegados a la navegación inferior.
+   */
+  .profile-account-editor .form-actions {
+    position: static;
+    margin-top: 8px !important;
+    margin-bottom: 18px !important;
+    padding-bottom: 10px !important;
+  }
+}
+/* FIN MUSIMO: separación del editor móvil */
+
+/* MUSIMO: cruz del editor móvil alineada */
+@media (max-width: 48rem) {
+  .profile-account-editor .profile-editor-heading {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 36px;
+    align-items: center !important;
+    column-gap: 16px;
+  }
+
+  .profile-account-editor .profile-editor-heading > div {
+    min-width: 0;
+  }
+
+  .profile-account-editor .profile-editor-heading > button {
+    position: static !important;
+    justify-self: end;
+    align-self: center;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    line-height: 0;
+  }
+
+  .profile-account-editor .profile-editor-heading > button svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    transform: none;
+  }
+}
+/* FIN MUSIMO: cruz del editor móvil alineada */
+
+/* MUSIMO: cruz del editor desktop alineada */
+@media (min-width: 48.0625rem) {
+  .profile-account-editor .profile-editor-heading {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 36px;
+    align-items: center !important;
+    column-gap: 16px;
+  }
+
+  .profile-account-editor .profile-editor-heading > div {
+    min-width: 0;
+  }
+
+  .profile-account-editor .profile-editor-heading > button {
+    position: static !important;
+    justify-self: end;
+    align-self: center;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    line-height: 0;
+  }
+
+  .profile-account-editor .profile-editor-heading > button svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    margin: 0;
+    transform: none;
+  }
+}
+/* FIN MUSIMO: cruz del editor desktop alineada */
+
+/* MUSIMO: títulos internos de creación más grandes */
+
+/* Nueva lista y Nueva reseña */
+.list-editor-form .creation-section-heading h2,
+.review-editor-form .creation-section-heading h2,
+.review-editor-form .review-optional-field h2 {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+/* “Opcional” conserva una jerarquía secundaria */
+.review-editor-form .review-optional-field h2 > span {
+  font-size: .76rem;
+  line-height: 1;
+}
+
+@media (max-width: 48rem) {
+  .list-editor-form .creation-section-heading h2,
+  .review-editor-form .creation-section-heading h2,
+  .review-editor-form .review-optional-field h2 {
+    font-size: 1.18rem;
+  }
+
+  .review-editor-form .review-optional-field h2 > span {
+    font-size: .72rem;
+  }
+}
+
+/* FIN MUSIMO: títulos internos de creación más grandes */
+
+/* MUSIMO: significados con color terciario */
+.story-detail-page .story-detail > .tag-list .tag {
+  border-color: #044013 !important;
+  background: #044013 !important;
+  color: #FFF8F5 !important;
+  font-weight: 600;
+  cursor: default;
+}
+
+.story-detail-page .story-detail > .tag-list .tag:hover,
+.story-detail-page .story-detail > .tag-list .tag:focus-visible {
+  border-color: #044013 !important;
+  background: #044013 !important;
+  color: #FFF8F5 !important;
+  transform: none;
+}
+/* FIN MUSIMO: significados con color terciario */
+
+/* MUSIMO: estrellas de valoración en color principal */
+
+/*
+ * Todas las valoraciones usan exactamente el color
+ * principal de Musimo. No se utilizan amarillos ni emojis.
+ */
+.rating-stars,
+.rating-label,
+.rating-display,
+.stars-row,
+.star,
+.star.filled,
+.star-btn,
+.star-btn.active,
+.rating-field button,
+.rating-field button.active,
+.review-page-rating button,
+.review-page-rating button.active {
+  color: #C0451B !important;
+}
+
+/* Estrellas SVG mostradas en cards y detalle */
+.rating-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: max-content;
+  letter-spacing: 0 !important;
+}
+
+.rating-stars .rating-star {
+  width: 16px;
+  height: 16px;
+  display: block;
+  color: #C0451B !important;
+  stroke: #C0451B !important;
+  fill: none !important;
+}
+
+.rating-stars .rating-star.is-filled {
+  color: #C0451B !important;
+  stroke: #C0451B !important;
+  fill: #C0451B !important;
+}
+
+.rating-label .rating-star {
+  width: 15px;
+  height: 15px;
+}
+
+.rating-display .rating-star {
+  width: 19px;
+  height: 19px;
+}
+
+/* Estrellas interactivas del formulario de reseña */
+.review-page-rating
+  .review-optional-control
+  button,
+.rating-field button {
+  color: #C0451B !important;
+}
+
+.review-page-rating
+  .review-optional-control
+  button
+  svg,
+.rating-field button svg,
+.star-btn svg {
+  color: #C0451B !important;
+  stroke: #C0451B !important;
+}
+
+/* Sin seleccionar: contorno naranja */
+.review-page-rating
+  .review-optional-control
+  button:not(.active)
+  svg,
+.rating-field button:not(.active) svg {
+  fill: none !important;
+}
+
+/* Seleccionada: relleno naranja */
+.review-page-rating
+  .review-optional-control
+  button.active
+  svg,
+.rating-field button.active svg,
+.star-btn.active svg,
+.star.filled svg {
+  color: #C0451B !important;
+  stroke: #C0451B !important;
+  fill: #C0451B !important;
+}
+
+/* Evita que hover cambie nuevamente a amarillo */
+.review-page-rating
+  .review-optional-control
+  button:hover,
+.review-page-rating
+  .review-optional-control
+  button:focus-visible,
+.rating-field button:hover,
+.rating-field button:focus-visible,
+.star-btn:hover,
+.star-btn:focus-visible {
+  color: #C0451B !important;
+}
+
+/* FIN MUSIMO: estrellas de valoración en color principal */
+
+/* MUSIMO: reparación estable del formulario de reseña */
+
+/* Una sola línea divisoria entre cada grupo en escritorio */
+@media (min-width: 48.0625rem) {
+  .review-editor-form .review-page-rating {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border-soft) !important;
+  }
+
+  .review-editor-form
+    .review-optional-field:not(.review-page-rating):not(.review-moment-block) {
+    border-top: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  .review-editor-form .review-moment-block {
+    padding-top: 22px;
+    border-top: 1px solid var(--border) !important;
+    border-bottom: 0 !important;
+  }
+}
+
+/* Mobile vuelve a una columna estable y campos al ancho completo */
+@media (max-width: 48rem) {
+  .review-editor-columns {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100%;
+  }
+
+  .review-editor-context,
+  .review-editor-story {
+    display: contents !important;
+  }
+
+  .review-selected-release,
+  .review-editor-context > .loading-text {
+    order: 1;
+  }
+
+  .review-editor-story > .creation-section-heading {
+    order: 3;
+    margin-top: 26px;
+  }
+
+  .review-editor-story > label {
+    order: 4;
+    width: 100%;
+  }
+
+  .review-page-rating {
+    order: 5;
+  }
+
+  .review-editor-context
+    > .review-optional-field:not(.review-page-rating) {
+    order: 6;
+  }
+
+  .review-moment-block {
+    order: 7;
+  }
+
+  .review-editor-story > label textarea,
+  .review-optional-field input,
+  .review-moment-block textarea {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+  }
+
+  .review-editor-story > label textarea {
+    min-height: 190px !important;
+    height: auto !important;
+  }
+
+  .review-editor-form .review-page-rating,
+  .review-editor-form .review-moment-block {
+    border-bottom: 0 !important;
+  }
+}
+
+/* FIN MUSIMO: reparación estable del formulario de reseña */
+
+/* MUSIMO: separadores faltantes en reseña mobile */
+@media (max-width: 48rem) {
+  /*
+   * Una única línea antes de cada bloque.
+   * No se usan bordes inferiores para evitar duplicados.
+   */
+  .review-editor-form .review-page-rating {
+    margin-top: 28px !important;
+    padding-top: 28px !important;
+    border-top: 1px solid var(--border) !important;
+    border-bottom: 0 !important;
+  }
+
+  .review-editor-form
+    .review-editor-context
+    > .review-optional-field:not(.review-page-rating) {
+    margin-top: 28px !important;
+    padding-top: 28px !important;
+    border-top: 1px solid var(--border) !important;
+    border-bottom: 0 !important;
+  }
+
+  /*
+   * Tu momento ya tenía su separador:
+   * lo conservamos como una sola línea.
+   */
+  .review-editor-form .review-moment-block {
+    margin-top: 28px !important;
+    padding-top: 28px !important;
+    border-top: 1px solid var(--border) !important;
+    border-bottom: 0 !important;
+  }
+}
+/* FIN MUSIMO: separadores faltantes en reseña mobile */
+
+/* MUSIMO: detalle individual de reseña estable */
+
+.review-detail-content .review-content-section {
+  margin: 0;
+  padding: 28px 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+}
+
+.review-detail-content
+  .review-copy-section {
+  margin-top: 28px;
+}
+
+.review-detail-content
+  .review-content-section
+  h2 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.review-detail-content
+  .review-content-section
+  p {
+  margin: 0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.review-detail-content
+  .review-meaning-section
+  .tag-list {
+  margin: 0;
+}
+
+.review-detail-content
+  .review-meaning-section
+  .tag {
+  border-color: #044013 !important;
+  background: #044013 !important;
+  color: #FFF8F5 !important;
+  text-decoration: none;
+}
+
+.review-detail-content
+  .review-moment-section {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.review-mobile-owner-actions {
+  display: none;
+}
+
+.review-load-error {
+  max-width: 620px;
+  margin: 80px auto;
+  text-align: center;
+}
+
+@media (max-width: 48rem) {
+  .review-mobile-owner-actions {
+    display: flex;
+    margin-top: 22px;
+  }
+
+  .review-mobile-owner-actions .btn {
+    width: 100%;
+    min-height: 44px;
+    gap: 8px;
+  }
+
+  .review-detail-content
+    .review-content-section {
+    padding: 25px 0;
+  }
+
+  .review-detail-content
+    .review-copy-section {
+    margin-top: 24px;
+  }
+
+  .review-detail-content
+    .review-content-section
+    h2 {
+    font-size: 1.22rem;
+  }
+}
+
+/* FIN MUSIMO: detalle individual de reseña estable */
+
+/* MUSIMO: detalle de reseña, separador y título mobile */
+
+/* Desktop: conservar una sola raya debajo del encabezado */
+@media (min-width: 48.0625rem) {
+  .review-detail-content
+    .review-copy-section {
+    border-top: 0 !important;
+  }
+}
+
+/* Mobile: título del lanzamiento ligeramente más pequeño */
+@media (max-width: 48rem) {
+  .review-detail-content
+    .story-detail
+    > header
+    > h1 {
+    font-size: clamp(1.65rem, 7.5vw, 1.85rem) !important;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* FIN MUSIMO: detalle de reseña, separador y título mobile */
+
+/* MUSIMO: ritmo uniforme del detalle de reseña */
+
+/*
+ * Todas las secciones siguen el mismo ritmo:
+ * raya → 20 px → título → 10 px → contenido.
+ */
+.review-detail-content .review-content-section {
+  margin: 0 !important;
+  padding: 20px 0 30px !important;
+  border-top: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/*
+ * “Reseña” aprovecha la línea que ya cierra el encabezado,
+ * evitando un separador duplicado.
+ */
+.review-detail-content .review-copy-section {
+  margin-top: 0 !important;
+  border-top: 0 !important;
+}
+
+/* Títulos alineados de manera idéntica */
+.review-detail-content
+  .review-content-section
+  > h2 {
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  font-family: var(--font-display);
+  line-height: 1.15;
+}
+
+/* Textos sin márgenes heredados irregulares */
+.review-detail-content
+  .review-content-section
+  > p,
+.review-detail-content
+  .review-content-section
+  > .tag-list {
+  margin: 0 !important;
+}
+
+/* Mobile mantiene exactamente el mismo criterio */
+@media (max-width: 48rem) {
+  .review-detail-content .review-content-section {
+    padding-top: 18px !important;
+    padding-bottom: 26px !important;
+  }
+
+  .review-detail-content
+    .review-content-section
+    > h2 {
+    margin-bottom: 9px !important;
+  }
+}
+
+/* FIN MUSIMO: ritmo uniforme del detalle de reseña */
+
+/* MUSIMO: detalle de reseña compacto y flexible */
+
+/*
+ * Sin alturas mínimas forzadas.
+ * Cada sección ocupa solamente lo que necesita su contenido.
+ */
+.review-detail-content .review-content-section {
+  min-block-size: 0 !important;
+  block-size: auto !important;
+  max-block-size: none !important;
+  display: block !important;
+  padding: 18px 0 22px !important;
+  overflow: visible !important;
+}
+
+/* Mantiene el mismo ritmo entre título y contenido */
+.review-detail-content
+  .review-content-section
+  > h2 {
+  margin: 0 0 9px !important;
+}
+
+/* Textos largos crecen naturalmente */
+.review-detail-content
+  .review-content-section
+  > p {
+  width: 100%;
+  margin: 0 !important;
+  overflow-wrap: anywhere;
+}
+
+/* Las etiquetas se acomodan sin aumentar artificialmente la caja */
+.review-detail-content
+  .review-content-section
+  > .tag-list {
+  width: 100%;
+  margin: 0 !important;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+@media (max-width: 48rem) {
+  .review-detail-content .review-content-section {
+    padding: 16px 0 20px !important;
+  }
+
+  /* Texto principal un poco más contenido en mobile */
+  .review-detail-content
+    .review-copy-section
+    .story-detail-text,
+  .review-detail-content
+    .review-moment-section
+    > p {
+    font-size: .94rem !important;
+    line-height: 1.55 !important;
+  }
+}
+
+/* FIN MUSIMO: detalle de reseña compacto y flexible */
+
+/* MUSIMO: compactar específicamente Momento */
+
+/*
+ * Reseteo específico: Momento ocupa solamente
+ * la altura necesaria para su título y contenido.
+ */
+.review-detail-content
+  .review-content-section.review-moment-section {
+  min-height: 0 !important;
+  min-block-size: 0 !important;
+  height: auto !important;
+  block-size: auto !important;
+  max-height: none !important;
+  max-block-size: none !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 18px 0 22px !important;
+  overflow: visible !important;
+}
+
+.review-detail-content
+  .review-content-section.review-moment-section
+  > h2 {
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 0 9px !important;
+  padding: 0 !important;
+}
+
+.review-detail-content
+  .review-content-section.review-moment-section
+  > p {
+  min-height: 0 !important;
+  min-block-size: 0 !important;
+  height: auto !important;
+  block-size: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.55 !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 48rem) {
+  .review-detail-content
+    .review-content-section.review-moment-section {
+    min-height: 0 !important;
+    min-block-size: 0 !important;
+    height: auto !important;
+    padding: 16px 0 20px !important;
+  }
+
+  .review-detail-content
+    .review-content-section.review-moment-section
+    > p {
+    min-height: 0 !important;
+    height: auto !important;
+    font-size: .94rem !important;
+    line-height: 1.5 !important;
+  }
+}
+
+/* FIN MUSIMO: compactar específicamente Momento */
+
+/* MUSIMO: quitar espacio inferior del artículo de reseña */
+.story-detail-page
+  .review-detail-content
+  > article.story-detail {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* La última sección define el cierre visual del artículo */
+.story-detail-page
+  .review-detail-content
+  > article.story-detail
+  > .review-content-section:last-child {
+  padding-bottom: 20px !important;
+}
+
+@media (max-width: 48rem) {
+  .story-detail-page
+    .review-detail-content
+    > article.story-detail
+    > .review-content-section:last-child {
+    padding-bottom: 18px !important;
+  }
+}
+/* FIN MUSIMO: quitar espacio inferior del artículo de reseña */
+
+/* MUSIMO: resonancia con corazón alineado */
+
+/* Botón principal de la reseña */
+.review-side-actions .btn-secondary,
+.review-mobile-interaction {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  white-space: nowrap;
+}
+
+.review-side-actions .btn-secondary > svg,
+.review-mobile-interaction > svg {
+  display: block;
+  flex: 0 0 auto;
+  margin: 0 !important;
+  color: #C0451B;
+}
+
+/* Acción dentro de cada comentario */
+.comments-section .comment-resonate-button {
+  width: max-content !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 5px 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #C0451B !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+.comments-section .comment-resonate-button > svg {
+  display: block;
+  flex: 0 0 auto;
+  margin: 0 !important;
+  color: #C0451B !important;
+}
+
+.comments-section .comment-resonate-button > span {
+  display: inline-block;
+  line-height: 1;
+}
+
+.comments-section .comment-resonate-button:hover,
+.comments-section .comment-resonate-button:focus-visible {
+  background: transparent !important;
+  color: #C0451B !important;
+  transform: none;
+}
+
+/* FIN MUSIMO: resonancia con corazón alineado */
+
+/* MUSIMO: paginación limpia de Comunidad */
+
+/* Eliminar la raya de la última publicación */
+.social-page
+  .community-main
+  .feed-list
+  > :last-child {
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+
+/* Paginación sin caja ni separador superior */
+.social-page .community-pagination {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 30px;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+.social-page
+  .community-pagination
+  .community-page-numbers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Todos los números son circulares */
+.social-page .community-pagination button {
+  inline-size: 36px !important;
+  block-size: 36px !important;
+  min-inline-size: 36px !important;
+  min-block-size: 36px !important;
+  max-inline-size: 36px !important;
+  max-block-size: 36px !important;
+  display: grid;
+  place-items: center;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent;
+  color: var(--text);
+  font-size: .82rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: none;
+}
+
+/* Página actual */
+.social-page
+  .community-pagination
+  button.active {
+  border-color: #C0451B !important;
+  background: #C0451B !important;
+  color: #fff !important;
+}
+
+/* Hover de páginas no seleccionadas */
+.social-page
+  .community-pagination
+  button:not(.active):not(:disabled):hover,
+.social-page
+  .community-pagination
+  button:not(.active):not(:disabled):focus-visible {
+  background: var(--surface-elevated);
+  color: #C0451B;
+  transform: none;
+}
+
+/* Flecha para avanzar */
+.social-page
+  .community-pagination
+  .community-next-page {
+  border: 1px solid var(--border) !important;
+  font-size: 1rem;
+}
+
+.social-page
+  .community-pagination
+  .community-next-page:disabled {
+  opacity: .3;
+  cursor: default;
+}
+
+/* Muchas páginas: desplazamiento horizontal en mobile */
+@media (max-width: 48rem) {
+  .social-page .community-pagination {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+
+  .social-page
+    .community-pagination::-webkit-scrollbar {
+    display: none;
+  }
+
+  .social-page
+    .community-pagination
+    .community-page-numbers {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+
+  .social-page
+    .community-pagination
+    .community-next-page {
+    flex: 0 0 36px;
+  }
+}
+
+/* FIN MUSIMO: paginación limpia de Comunidad */
+
+/* MUSIMO: coherencia de resultados en Buscar */
+
+/* =========================================================
+   USUARIOS — TODAS LAS RESOLUCIONES
+   Avatar, nombre/usuario y acción. Sin biografía.
+   ========================================================= */
+
+.catalog-search-page
+  .person-result-user
+  p {
+  display: none !important;
+}
+
+.catalog-search-page
+  .person-result-user {
+  width: 100%;
+  min-width: 0;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.catalog-search-page
+  .person-result-user
+  > a {
+  min-width: 0;
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.catalog-search-page
+  .person-result-user
+  > a
+  > span:last-child {
+  min-width: 0;
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0;
+  row-gap: 2px;
+}
+
+.catalog-search-page
+  .person-result-user
+  strong {
+  min-width: 0;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.catalog-search-page
+  .person-result-user
+  small {
+  min-width: 0;
+  margin: 0;
+  color: var(--muted);
+  font-size: .76rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.catalog-search-page
+  .person-result-user
+  > button {
+  min-width: 68px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   DESKTOP — USUARIOS LIMPIOS
+   ========================================================= */
+
+@media (min-width: 48.0625rem) {
+  .catalog-search-page
+    .person-result-user {
+    min-height: 72px;
+    padding: 10px 12px !important;
+  }
+
+  .catalog-search-page
+    .person-result-user
+    .artist-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .catalog-search-page
+    .person-result-user
+    > a
+    > span:last-child {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+/* =========================================================
+   MOBILE — MISMO LENGUAJE DE FILAS
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  /* Menos vacío entre las categorías de resultados */
+  .catalog-search-page
+    .search-results {
+    gap: 24px !important;
+  }
+
+  .catalog-search-page
+    .search-results
+    > section {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .catalog-search-page
+    .search-results
+    > section
+    > h2 {
+    margin: 0 0 10px !important;
+  }
+
+  /*
+   * El contenedor de Artistas y Usuarios deja de verse
+   * como una caja alrededor de todas las filas.
+   */
+  .catalog-search-page
+    .search-results
+    .people-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Artistas: mismo ritmo que los lanzamientos */
+  .catalog-search-page
+    .search-results
+    .artist-result {
+    width: 100%;
+    min-height: 74px !important;
+    display: grid !important;
+    grid-template-columns: 58px minmax(0, 1fr) 24px !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    padding: 8px 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border-soft) !important;
+    border-radius: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .catalog-search-page
+    .search-results
+    .artist-result:hover,
+  .catalog-search-page
+    .search-results
+    .artist-result:focus-visible {
+    background: transparent !important;
+  }
+
+  .catalog-search-page
+    .search-results
+    .artist-result
+    .artist-avatar {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    min-height: 58px !important;
+    border-radius: 50%;
+  }
+
+  /* En Artistas sólo hace falta mostrar el nombre */
+  .catalog-search-page
+    .search-results
+    .artist-result
+    small {
+    display: none !important;
+  }
+
+  .catalog-search-page
+    .search-results
+    .artist-result
+    strong {
+    display: block;
+    line-height: 1.25;
+  }
+
+  /* Usuarios: misma fila, con el botón al final */
+  .catalog-search-page
+    .search-results
+    .person-result-user {
+    min-height: 74px !important;
+    margin: 0 !important;
+    padding: 8px 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border-soft) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .catalog-search-page
+    .search-results
+    .person-result-user
+    > a {
+    grid-template-columns: 58px minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .catalog-search-page
+    .search-results
+    .person-result-user
+    .artist-avatar {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    min-height: 58px !important;
+  }
+
+  .catalog-search-page
+    .search-results
+    .person-result-user
+    > button {
+    min-width: 66px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0 9px;
+    font-size: .72rem;
+  }
+
+  /* La última fila no necesita cerrar con otra raya */
+  .catalog-search-page
+    .search-results
+    .people-grid
+    > :last-child {
+    border-bottom: 0 !important;
+  }
+}
+
+/* FIN MUSIMO: coherencia de resultados en Buscar */
+
+/* MUSIMO: Buscar usuarios muestra solamente username */
+
+/* En los resultados de búsqueda se oculta el nombre personal */
+.catalog-search-page
+  .person-result-user
+  strong {
+  display: none !important;
+}
+
+/* El nombre de usuario pasa a ser el dato principal */
+.catalog-search-page
+  .person-result-user
+  small {
+  display: block !important;
+  margin: 0 !important;
+  color: var(--text) !important;
+  font-size: .88rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  overflow-wrap: anywhere;
+}
+
+/* La columna ya no necesita acomodar dos textos */
+.catalog-search-page
+  .person-result-user
+  > a
+  > span:last-child {
+  display: block !important;
+  min-width: 0;
+}
+
+/* FIN MUSIMO: Buscar usuarios muestra solamente username */
+
+/* MUSIMO: ancho consistente de barras laterales */
+
+/*
+ * Un mismo sistema para cualquier barra lateral:
+ * 280 px de ancho + 48 px de separación.
+ */
+:root {
+  --musimo-sidebar-width: 280px;
+  --musimo-sidebar-gap: 48px;
+}
+
+@media (min-width: 56.3125rem) {
+  /* Inicio: barra a la izquierda */
+  .home-content-layout {
+    grid-template-columns:
+      var(--musimo-sidebar-width)
+      minmax(0, 1fr) !important;
+    column-gap: var(--musimo-sidebar-gap) !important;
+    justify-content: stretch !important;
+  }
+
+  /* Comunidad: barra a la derecha */
+  .community-layout {
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--musimo-sidebar-width) !important;
+    column-gap: var(--musimo-sidebar-gap) !important;
+    justify-content: stretch !important;
+  }
+
+  /* Buscar: barra a la derecha */
+  .catalog-search-page .search-layout,
+  .search-layout {
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--musimo-sidebar-width) !important;
+    column-gap: var(--musimo-sidebar-gap) !important;
+    justify-content: stretch !important;
+  }
+
+  /* Perfil: barra de artistas a la derecha */
+  .public-profile-page .public-profile-overview {
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--musimo-sidebar-width) !important;
+    column-gap: var(--musimo-sidebar-gap) !important;
+    row-gap: 42px;
+    justify-content: stretch !important;
+  }
+
+  /*
+   * El ancho incluye padding y bordes internos,
+   * para que ninguna barra termine midiendo más.
+   */
+  .home-sidebar,
+  .community-sidebar,
+  .search-recent-sidebar,
+  .public-profile-page
+    .profile-followed-artists {
+    inline-size: var(--musimo-sidebar-width) !important;
+    min-inline-size: var(--musimo-sidebar-width) !important;
+    max-inline-size: var(--musimo-sidebar-width) !important;
+    box-sizing: border-box;
+  }
+
+  /* Las columnas principales aprovechan el espacio restante */
+  .home-main-content,
+  .community-main,
+  .search-main-column,
+  .public-profile-page
+    .profile-overview-wide {
+    min-inline-size: 0;
+    max-inline-size: none;
+  }
+}
+
+/* FIN MUSIMO: ancho consistente de barras laterales */
+
+/* MUSIMO: expansión de contenido junto a barras laterales */
+
+@media (min-width: 56.3125rem) {
+  /* =======================================================
+     COMUNIDAD
+     La lista estaba limitada internamente a 760 px.
+     ======================================================= */
+
+  .social-page .community-layout {
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--musimo-sidebar-width) !important;
+    column-gap: var(--musimo-sidebar-gap) !important;
+  }
+
+  .social-page .community-main,
+  .social-page .community-main .feed-list {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+
+  .social-page .community-main .story-tile,
+  .social-page .community-main .list-tile {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /*
+   * Encabezado de filtros, publicaciones y paginación
+   * comparten ahora el mismo ancho.
+   */
+  .social-page .community-feed-controls,
+  .social-page .feed-list,
+  .social-page .community-pagination {
+    inline-size: 100% !important;
+    max-inline-size: none !important;
+  }
+
+  /* =======================================================
+     PERFIL
+     Las secciones principales estaban limitadas a 820 px.
+     ======================================================= */
+
+  .public-profile-page .public-profile-overview {
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--musimo-sidebar-width) !important;
+    column-gap: var(--musimo-sidebar-gap) !important;
+  }
+
+  .public-profile-page
+    .public-profile-overview
+    > .profile-overview-wide {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    justify-self: stretch;
+  }
+
+  .public-profile-page
+    .profile-overview-wide
+    .result-grid,
+  .public-profile-page
+    .profile-overview-wide
+    .story-tile,
+  .public-profile-page
+    .profile-overview-wide
+    .list-tile {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /*
+   * La barra de artistas conserva exactamente
+   * los mismos 280 px que las demás barras.
+   */
+  .public-profile-page .profile-followed-artists {
+    width: var(--musimo-sidebar-width) !important;
+    min-width: var(--musimo-sidebar-width) !important;
+    max-width: var(--musimo-sidebar-width) !important;
+    box-sizing: border-box;
+  }
+}
+
+/* FIN MUSIMO: expansión de contenido junto a barras laterales */

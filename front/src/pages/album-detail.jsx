@@ -1,334 +1,158 @@
-import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import { ReleaseCard, ReviewCard, fallbackCover } from "../components/content-cards";
+import StatusMessage from "../components/status-message";
+import { PageTrail } from "../components/page-header";
+import { getArtistReleases, getRelease, getReleaseTracks, searchCatalog } from "../services/catalog.service";
 import { getReviews } from "../services/reviews.service";
-import { getAlbumInfo, getArtistTopAlbums } from "../services/lastfm.service";
-import { isInToReview, toggleToReview } from "../services/to-review.service";
-import {
-  getAlbumNavigationData,
-  getAlbumUrl,
-} from "../services/album-link.service";
+import { addToReview, getToReviewList, isInToReview, removeFromToReview } from "../services/to-review.service";
+import { createAlbumSlug, getAlbumNavigationData, getAlbumUrl } from "../services/album-link.service";
+import { getArtistUrl } from "../services/artist-link.service";
+import { saveRecentSearch } from "../services/recent-searches.service";
+import { setBreadcrumbContext } from "../services/breadcrumb.service";
+import { isOwnReview, orderReleaseReviews } from "../services/review-display.service";
+import { useAuth } from "../context/use-auth";
+import BackButton from "../components/back-button";
 
-function normalize(value = "") {
-  return value.trim().toLowerCase();
+function duration(milliseconds) {
+  if (!milliseconds) return "";
+  const seconds = Math.round(milliseconds / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-function AlbumDetail() {
-  const { slug } = useParams();
-  const [params] = useSearchParams();
+function comparable(value = "") {
+  return String(value).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
 
-  const savedAlbum = getAlbumNavigationData(slug);
+async function relatedReleases(release) {
+  try {
+    if (release.artistId) return await getArtistReleases(release.artistId, 12);
+    const results = await searchCatalog(release.artist, { limit: 20 });
+    const expected = comparable(release.artist);
+    const artist = results.artists?.find((item) => comparable(item.name || item.artist) === expected);
+    const artistId = artist?.id || artist?.catalogId || results.releases?.find((item) => comparable(item.artist) === expected)?.artistId;
+    if (artistId) return await getArtistReleases(artistId, 12);
+    return (results.releases || []).filter((item) => comparable(item.artist) === expected);
+  } catch {
+    return [];
+  }
+}
 
-  const title =
-    savedAlbum?.album || savedAlbum?.title || params.get("title") || "Álbum";
-
-  const artist = savedAlbum?.artist || params.get("artist") || "Artista";
-
-  const image =
-    savedAlbum?.image || params.get("image") || "/images/cover-placeholder.png";
-
-  const [albumInfo, setAlbumInfo] = useState({
-    title,
-    artist,
-    image,
-    year: null,
-    releaseType: "Álbum",
-    tracks: [],
-  });
-
+export default function AlbumDetail() {
+  const { usuario } = useAuth();
+  const navigate = useNavigate();
+  const { id, slug } = useParams();
+  const [release, setRelease] = useState(() => getAlbumNavigationData(slug));
   const [reviews, setReviews] = useState([]);
-  const [moreAlbums, setMoreAlbums] = useState([]);
-  const [marked, setMarked] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [tracklistOpen, setTracklistOpen] = useState(false);
-
-  const tracks = albumInfo.tracks || [];
-  const visibleTracks = tracklistOpen ? tracks : tracks.slice(0, 4);
-  const hasMoreTracks = tracks.length > 4;
-
-  const cover = albumInfo.image || image || "/images/cover-placeholder.png";
-
-  const reviewUrl = `/reviews?artist=${encodeURIComponent(
-    albumInfo.artist,
-  )}&album=${encodeURIComponent(albumInfo.title)}&image=${encodeURIComponent(
-    cover,
-  )}`;
+  const [more, setMore] = useState([]);
+  const [saved, setSaved] = useState(false);
+  const [tracks, setTracks] = useState([]);
+  const [tracksLoading, setTracksLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [tracksExpanded, setTracksExpanded] = useState(false);
+  const [status, setStatus] = useState({ type: "", text: "" });
 
   useEffect(() => {
-    loadAlbumInfo();
-    loadReviews();
-    loadMoreAlbums();
-  }, [title, artist]);
+    let active = true;
+    async function load() {
+      try {
+        let summary = id ? { catalogId: id } : getAlbumNavigationData(slug);
+        if (!summary && slug) {
+          const found = await searchCatalog(slug.replace(/-/g, " "), { limit: 20 });
+          summary = found.releases.find((item) => createAlbumSlug(item.artist, item.album) === slug) || found.releases[0];
+        }
+        const detail = summary?.catalogId ? await getRelease(summary.catalogId) : summary;
+        if (!detail) throw new Error("No pudimos identificar este lanzamiento.");
+        if (!active) return;
+        setRelease(detail);
+        setLoading(false);
+        setTracks(detail.tracks || []);
+        saveRecentSearch({ ...detail, type: "release", title: detail.album, subtitle: detail.artist });
+        if (detail.catalogId) {
+          setTracksLoading(true);
+          getReleaseTracks(detail.catalogId)
+            .then((items) => { if (active) setTracks(items || []); })
+            .catch(() => undefined)
+            .finally(() => { if (active) setTracksLoading(false); });
+        }
 
-  useEffect(() => {
-    setMarked(
-      isInToReview({
-        album: albumInfo.title,
-        artist: albumInfo.artist,
-      }),
-    );
-  }, [albumInfo.title, albumInfo.artist]);
-
-  async function loadAlbumInfo() {
-    try {
-      const data = await getAlbumInfo(artist, title);
-
-      setAlbumInfo({
-        title: data.title || title,
-        artist: data.artist || artist,
-        image: data.image || image,
-        year: data.year || null,
-        releaseType: data.releaseType || "Álbum",
-        tracks: data.tracks || [],
-      });
-    } catch {
-      setAlbumInfo({
-        title,
-        artist,
-        image,
-        year: null,
-        releaseType: "Álbum",
-        tracks: [],
-      });
+        const [releaseReviews, savedItems, discography] = await Promise.all([
+          getReviews(detail.catalogId ? { releaseId: detail.catalogId } : {}),
+          getToReviewList(),
+          relatedReleases(detail),
+        ]);
+        if (!active) return;
+        const matchingReviews = detail.catalogId ? releaseReviews : releaseReviews.filter((item) => item.album === detail.album && item.artist === detail.artist);
+        setReviews(orderReleaseReviews(matchingReviews, usuario));
+        setSaved(isInToReview(savedItems, detail));
+        setMore(discography.filter((item) => item.catalogId !== detail.catalogId).slice(0, 8));
+      } catch (error) {
+        if (active) setStatus({ type: "error", text: error.message || "No se pudo cargar el lanzamiento." });
+      } finally { if (active) setLoading(false); }
     }
-  }
+    load();
+    return () => { active = false; };
+  }, [id, slug, usuario]);
 
-  async function loadReviews() {
+  useEffect(() => { if (release) setBreadcrumbContext({ release }); }, [release]);
+
+  async function toggleSaved() {
     try {
-      const data = await getReviews();
-
-      const filtered = data.filter(
-        (review) =>
-          normalize(review.album) === normalize(title) &&
-          normalize(review.artist) === normalize(artist),
-      );
-
-      setReviews(filtered);
-    } catch {
-      setReviews([]);
-    }
+      if (saved) await removeFromToReview(release);
+      else await addToReview(release);
+      setSaved((value) => !value);
+      setStatus({ type: "success", text: saved ? "Quitado de Por reseñar." : "Guardado en Por reseñar." });
+    } catch (error) { setStatus({ type: "error", text: error.message || "No se pudo guardar." }); }
   }
 
-  async function loadMoreAlbums() {
-    try {
-      const data = await getArtistTopAlbums(artist);
-
-      const filtered = data
-        .filter((album) => normalize(album.title) !== normalize(title))
-        .slice(0, 6);
-
-      setMoreAlbums(filtered);
-    } catch {
-      setMoreAlbums([]);
-    }
-  }
-
-  function showToast(message) {
-    setToastMessage(message);
-
-    setTimeout(() => {
-      setToastMessage("");
-    }, 2200);
-  }
-
-  function handleMarked() {
-    const nextMarked = toggleToReview({
-      album: albumInfo.title,
-      artist: albumInfo.artist,
-      image: cover,
-      year: albumInfo.year,
-      type: albumInfo.releaseType || "Álbum",
-    });
-
-    setMarked(nextMarked);
-
-    showToast(nextMarked ? "Agregado a Por reseñar" : "Quitado de Por reseñar");
+  function startReview() {
+    const target = release.catalogId ? `/resenas?nueva=1&lanzamiento=${encodeURIComponent(release.catalogId)}` : "/resenas?nueva=1";
+    navigate(target, { state: { release } });
   }
 
   return (
     <div className="app-body">
       <Navbar />
-
       <main className="app-page app-page-wide">
-        <div id="pageNav">
-          <div className="breadcrumbs">
-            <Link className="crumb" to="/home">
-              Inicio
-            </Link>
-
-            <span className="crumb-sep">/</span>
-
-            <Link className="crumb" to="/search">
-              Buscar
-            </Link>
-
-            <span className="crumb-sep">/</span>
-
-            <span className="crumb current">{albumInfo.title}</span>
-          </div>
-
-          <Link className="back-link" to="/search">
-            ← Volver a la búsqueda
-          </Link>
-        </div>
-        <div className="album-page">
-          <aside className="album-sticky-cover">
-            <img
-              className="album-cover-img"
-              src={cover}
-              alt={albumInfo.title}
-            />
-
-            <div className="album-cover-actions">
-              <button
-                type="button"
-                className={`btn btn-secondary btn-block ${
-                  marked ? "btn-marked" : ""
-                }`}
-                onClick={handleMarked}
-              >
-                {marked ? "✓ Por reseñar" : "Por reseñar"}
-              </button>
-
-              <Link className="btn btn-primary btn-block" to={reviewUrl}>
-                Escribir reseña
-              </Link>
-            </div>
-          </aside>
-
-          <div className="album-scroll">
-            <section>
-              <h1 className="album-title">{albumInfo.title}</h1>
-              <p className="album-artist">{albumInfo.artist}</p>
-
-              <div className="album-meta-row">
-                {albumInfo.year && (
-                  <span className="meta-badge year">{albumInfo.year}</span>
-                )}
-
-                <span className="meta-badge">
-                  {albumInfo.releaseType || "Álbum"}
-                </span>
+        <div className="mobile-context-row"><BackButton fallback="/buscar" /></div>
+        {loading && <p className="loading-text">Cargando lanzamiento…</p>}
+        <StatusMessage type={status.type}>{status.text}</StatusMessage>
+        {!loading && release && (
+          <>
+            <div className="release-detail-shell">
+              <aside className="release-sticky-column">
+                <img className="release-hero-cover" src={release.image || "/images/cover-placeholder.png"} alt={`Portada de ${release.album}`} onError={fallbackCover} />
+                <div className="release-actions release-sidebar-actions">
+                  <button className="btn btn-primary btn-review" type="button" onClick={startReview}>Escribir reseña</button>
+                  <button className="btn btn-secondary" type="button" onClick={toggleSaved}>{saved ? "✓ En Por reseñar" : "+ Por reseñar"}</button>
+                </div>
+              </aside>
+              <div className="release-detail-content">
+                <header className="release-detail-header page-heading-copy">
+                <PageTrail items={[{ label: "Inicio", to: "/inicio" }, { label: "Lanzamientos", to: "/buscar?categoria=lanzamientos" }, { label: release.artist, to: getArtistUrl({ id: release.artistId, name: release.artist }) }, { label: release.album }]} />
+                <h1>{release.album}</h1>
+                <Link className="artist-link" to={getArtistUrl({ id: release.artistId, name: release.artist })}>{release.artist}</Link>
+                <p className="release-metadata">{[release.year, release.releaseType].filter(Boolean).join(" · ")}</p>
+                </header>
+                {(tracksLoading || tracks.length > 0) && <section className={`tracklist-preview ${tracksExpanded ? "expanded" : ""}`}>
+                  <div className="tracklist-heading"><h2>Canciones</h2>{tracksLoading ? <span>Cargando…</span> : <span>{tracks.length} canciones</span>}</div>
+                  <ol>{(tracksExpanded ? tracks : tracks.slice(0, 4)).map((track, index) => <li key={track.id || `${track.title}-${index}`}><span className="track-number">{index + 1}</span><strong>{track.title}</strong><time>{duration(track.length)}</time></li>)}</ol>
+                  {tracks.length > 4 && <button className="tracklist-toggle" type="button" onClick={() => setTracksExpanded((value) => !value)}>{tracksExpanded ? "Ver menos" : `Ver todas las canciones (${tracks.length})`}</button>}
+                </section>}
+                <section className="community-release-section">
+                  <div className="section-header"><h2>Reseñas de la comunidad</h2>{reviews.length > 0 && <Link className="btn btn-secondary btn-sm" to={`${getAlbumUrl(release)}/resenas`}>Ver todas</Link>}</div>
+                  <div className="release-review-preview-grid">{reviews.slice(0, 3).map((review) => <ReviewCard key={review._id} review={review} preview showEmptyRating={isOwnReview(review, usuario)} />)}</div>
+                  {!reviews.length && <button className="empty-state empty-state-action empty-state-button" type="button" onClick={startReview}><span>Todavía nadie contó una historia sobre este lanzamiento.</span><strong>Escribir la primera reseña →</strong></button>}
+                </section>
+                <section className="more-by-artist"><h2>Más de {release.artist}</h2>{more.length > 0 ? <div className="result-grid more-releases-grid">{more.map((item) => <ReleaseCard key={item.catalogId} release={item} />)}</div> : <p className="empty-state">No encontramos otros lanzamientos disponibles de este artista.</p>}</section>
               </div>
-            </section>
-
-            <section className="tracklist-panel">
-              <h2>Lista de canciones</h2>
-
-              {tracks.length > 0 ? (
-                <>
-                  <div
-                    className={`tracklist-wrap ${
-                      hasMoreTracks && !tracklistOpen ? "collapsed" : "expanded"
-                    }`}
-                  >
-                    <ol>
-                      {visibleTracks.map((track) => (
-                        <li key={track}>{track}</li>
-                      ))}
-                    </ol>
-
-                    {hasMoreTracks && !tracklistOpen && (
-                      <div className="tracklist-fade"></div>
-                    )}
-                  </div>
-
-                  {hasMoreTracks && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost tracklist-toggle"
-                      onClick={() => setTracklistOpen(!tracklistOpen)}
-                    >
-                      {tracklistOpen ? "Mostrar menos" : "Mostrar más"}
-                    </button>
-                  )}
-                </>
-              ) : (
-                <p className="empty-state">
-                  No hay lista de canciones disponible para este lanzamiento.
-                </p>
-              )}
-            </section>
-
-            <section>
-              <h2 className="section-heading">Reseñas</h2>
-
-              {reviews.length === 0 ? (
-                <div className="empty-state-block">
-                  <p className="empty-state">
-                    Todavía no hay reseñas. Sé el primero en contar tu historia.
-                  </p>
-
-                  <Link className="btn btn-primary" to={reviewUrl}>
-                    Escribir reseña
-                  </Link>
-                </div>
-              ) : (
-                <div>
-                  {reviews.map((review) => (
-                    <Link
-                      className="review-preview"
-                      key={review._id}
-                      to={`/review/${review._id}`}
-                    >
-                      <div className="review-preview-header">
-                        <span>{review.username || "Usuario"}</span>
-                        <span>
-                          {review.createdAt
-                            ? new Date(review.createdAt).toLocaleDateString(
-                                "es-AR",
-                              )
-                            : ""}
-                        </span>
-                      </div>
-
-                      <p>
-                        {review.text.slice(0, 180)}
-                        {review.text.length > 180 ? "…" : ""}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {moreAlbums.length > 0 && (
-              <section className="more-albums">
-                <h2 className="section-heading-albums">
-                  Más lanzamientos de {albumInfo.artist}
-                </h2>
-
-                <div className="more-albums-grid">
-                  {moreAlbums.map((album) => (
-                    <Link
-                      className="more-album-card"
-                      key={`${album.artist}-${album.title}`}
-                      to={getAlbumUrl(album)}
-                    >
-                      <img
-                        src={album.image || "/images/cover-placeholder.png"}
-                        alt={album.title}
-                      />
-
-                      <span>{album.title}</span>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
       </main>
-
       <Footer />
-
-      <div className={`toast-global ${toastMessage ? "show" : ""}`}>
-        {toastMessage}
-      </div>
     </div>
   );
 }
-
-export default AlbumDetail;

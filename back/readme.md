@@ -1,18 +1,13 @@
-# Musimo Backend
+# API de musimo
 
-API REST desarrollada con Node.js, Express, MongoDB, JWT, bcrypt y Yup.
-
-## Comandos
+Express, MongoDB, JWT, bcrypt y Yup. La guía completa está en el [`README.md`](../README.md) de la raíz.
 
 ```bash
-npm install
+cp .env.example .env
+npm ci
+npm run check
+npm test
 npm run dev
-npm start
-npm run make-admin -- correo@ejemplo.com
 ```
 
-## Variables de entorno
-
-Usar `.env.example` como referencia. El archivo `.env` no debe subirse al repositorio.
-
-La documentación general, endpoints y pasos de deploy se encuentran en el `README.md` de la raíz del proyecto.
+Las variables y comandos de migración están documentados en `back/.env.example` y `docs/GUIA_PUBLICACION.md`.

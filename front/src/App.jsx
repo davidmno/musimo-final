@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import InstallAppButton from "./components/install-app-button";
 
 const landingReviews = [
   {
@@ -39,13 +40,16 @@ function App() {
       />
 
       <header className="landing-nav">
-        <Link to="/" className="logo" aria-label="Musimo">
-          <img src="/images/logo.png" alt="Musimo" />
+        <Link to="/" className="logo" aria-label="musimo">
+          <img src="/images/logo.png" alt="musimo" />
         </Link>
 
-        <Link to="/login" className="btn btn-primary">
-          Entrar
-        </Link>
+        <div className="landing-nav-actions">
+          <InstallAppButton className="btn btn-primary landing-install-button" />
+          <Link to="/iniciar-sesion" className="btn btn-secondary landing-web-entry">
+            Entrar
+          </Link>
+        </div>
       </header>
 
       <section className="landing-hero landing-section--textured">
@@ -59,9 +63,15 @@ function App() {
             lanzamientos que marcaron tu vida.
           </p>
 
-          <Link to="/login" className="btn btn-primary">
-            Entrar a Musimo
-          </Link>
+          <div className="landing-hero-actions">
+            <InstallAppButton
+              className="btn btn-primary landing-install-button landing-install-button--hero"
+              label="Instalar app"
+            />
+            <Link to="/iniciar-sesion" className="btn btn-secondary landing-web-entry">
+              Entrar desde la web
+            </Link>
+          </div>
         </div>
 
         <div className="hero-visual">
@@ -133,7 +143,7 @@ function App() {
         <div className="landing-glow landing-glow--intro" aria-hidden="true" />
 
         <div className="section-inner">
-          <p className="section-eyebrow">¿Qué es Musimo?</p>
+          <p className="section-eyebrow">¿Qué es musimo?</p>
 
           <div className="landing-what">
             <h2 className="section-title">Un archivo de recuerdos musicales</h2>
@@ -242,13 +252,13 @@ function App() {
 
             <div className="meaning-body">
               <p>
-                Las plataformas optimizan para reproducciones. Musimo optimiza
+                Las plataformas optimizan para reproducciones. musimo optimiza
                 para memoria: lo que un disco te dijo, dónde estabas cuando lo
                 escuchaste, por qué todavía lo volvés a poner.
               </p>
 
-              <Link to="/login" className="btn btn-primary">
-                Entrar a Musimo
+              <Link to="/iniciar-sesion" className="btn btn-primary">
+                Entrar a musimo
               </Link>
             </div>
           </div>
@@ -259,10 +269,10 @@ function App() {
         <div className="landing-footer-inner">
           <img
             src="/images/logo.svg"
-            alt="Musimo"
+            alt="musimo"
             className="landing-footer-logo"
           />
-          <p>© Musimo 2026 · Música · Significado · Momentos</p>
+          <p>© musimo 2026 · Música · Significado · Momentos</p>
         </div>
       </footer>
     </div>

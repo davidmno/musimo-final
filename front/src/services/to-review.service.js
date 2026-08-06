@@ -1,99 +1,28 @@
-const TO_REVIEW_KEY = "musimo_to_review";
-const TO_REVIEW_EVENT = "musimo-to-review-updated";
+import { apiRequest } from "./api";
 
-function normalize(value = "") {
-  return String(value).trim().toLowerCase();
+export const TO_REVIEW_EVENT = "musimo-to-review-updated";
+const notify = () => window.dispatchEvent(new Event(TO_REVIEW_EVENT));
+
+export async function getToReviewList() { return apiRequest("/to-review"); }
+export async function addToReview(release) {
+  const data = await apiRequest("/to-review", { method: "POST", body: JSON.stringify(release) });
+  notify();
+  return data;
 }
-
-function getCurrentUserEmail() {
-  try {
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
-
-    return usuario?.email
-      ? normalize(usuario.email)
-      : "guest";
-  } catch {
-    return "guest";
-  }
+export async function removeFromToReview(release) {
+  const key = release.catalogId || `${String(release.artist).trim().toLowerCase()}|${String(release.album).trim().toLowerCase()}`;
+  const data = await apiRequest(`/to-review/${encodeURIComponent(key)}`, { method: "DELETE" });
+  notify();
+  return data;
 }
-
-function getUserStorageKey() {
-  return `${TO_REVIEW_KEY}:${getCurrentUserEmail()}`;
+export async function clearToReviewList() {
+  const data = await apiRequest("/to-review", { method: "DELETE" });
+  notify();
+  return data;
 }
-
-function notifyToReviewChange() {
-  window.dispatchEvent(new Event(TO_REVIEW_EVENT));
-}
-
-export function getToReviewList() {
-  const stored = localStorage.getItem(getUserStorageKey());
-
-  if (!stored) return [];
-
-  try {
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveToReviewList(list) {
-  localStorage.setItem(getUserStorageKey(), JSON.stringify(list));
-  notifyToReviewChange();
-}
-
-export function isInToReview(release) {
-  return getToReviewList().some(
-    (item) =>
-      normalize(item.album) === normalize(release.album) &&
-      normalize(item.artist) === normalize(release.artist),
+export function isInToReview(list, release) {
+  return list.some((item) =>
+    (item.catalogId && release.catalogId && item.catalogId === release.catalogId) ||
+    (item.album?.toLowerCase() === release.album?.toLowerCase() && item.artist?.toLowerCase() === release.artist?.toLowerCase()),
   );
 }
-
-export function addToReview(release) {
-  const list = getToReviewList();
-
-  if (isInToReview(release)) return list;
-
-  const nextList = [
-    {
-      album: release.album,
-      artist: release.artist,
-      image: release.image || "",
-      year: release.year || "",
-      type: release.type || "Álbum",
-    },
-    ...list,
-  ];
-
-  saveToReviewList(nextList);
-  return nextList;
-}
-
-export function removeFromToReview(release) {
-  const nextList = getToReviewList().filter(
-    (item) =>
-      normalize(item.album) !== normalize(release.album) ||
-      normalize(item.artist) !== normalize(release.artist),
-  );
-
-  saveToReviewList(nextList);
-  return nextList;
-}
-
-export function toggleToReview(release) {
-  if (isInToReview(release)) {
-    removeFromToReview(release);
-    return false;
-  }
-
-  addToReview(release);
-  return true;
-}
-
-export function clearToReviewList() {
-  saveToReviewList([]);
-}
-
-export { TO_REVIEW_EVENT };

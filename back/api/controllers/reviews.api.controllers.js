@@ -1,109 +1,166 @@
-import * as reviewsService from "../../services/reviews.services.js";
+import * as reviews from "../../services/reviews.services.js";
+import * as community from "../../services/community.services.js";
+import { commentSchema, reviewSchema } from "../../schemas/reviews.schema.js";
+import { getUserById } from "../../services/usuarios.services.js";
+import { applyReviewVisibility } from "../../utils/review-visibility.js";
 
-function canManageReview(review, usuario) {
-  if (usuario?.rol === "admin") return true;
-
-  const sameUserId =
-    review.userId && String(review.userId) === String(usuario?._id);
-
-  const legacyOwner =
-    !review.userId &&
-    review.username &&
-    review.username === usuario?.nombre;
-
-  return Boolean(sameUserId || legacyOwner);
+function canManage(review, user) {
+  return Boolean(
+    user &&
+    (user.rol === "admin" ||
+      (review.userId && String(review.userId) === String(user._id)) ||
+      (!review.userId && review.username === user.nombre)),
+  );
 }
 
-function visibleReview(review, usuario) {
-  if (canManageReview(review, usuario)) return review;
-
+async function visible(review, user) {
+  if (!review) return null;
+  const owner = canManage(review, user);
+  const authorUser = review.userId ? await getUserById(review.userId) : null;
   return {
-    ...review,
-    rating: null,
-    ratingPrivate: true,
+    ...applyReviewVisibility(review, { canManage: owner }),
+    canManage: owner,
+    resonatedByMe: await community.hasResonated(
+      user?._id,
+      "review",
+      review._id,
+    ),
+    author: authorUser
+      ? {
+          _id: authorUser._id,
+          nombre: authorUser.nombre,
+          handle: authorUser.handle,
+          avatar: authorUser.avatar,
+          avatarImage: authorUser.avatarImage,
+        }
+      : null,
   };
 }
 
-export async function getReviews(req, res) {
+export async function getReviews(req, res, next) {
   try {
-    const reviews = await reviewsService.getReviews();
-    res.json(reviews.map((review) => visibleReview(review, req.usuario)));
+    const data = await reviews.getReviews(req.query);
+    res.json(
+      await Promise.all(data.map((review) => visible(review, req.usuario))),
+    );
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "No se pudieron cargar las reseñas" });
+    next(error);
   }
 }
 
-export async function getReviewById(req, res) {
+export async function getReviewById(req, res, next) {
   try {
-    const review = await reviewsService.getReviewById(req.params.id);
-
-    if (!review) {
+    const review = await reviews.getReviewById(req.params.id);
+    if (!review)
       return res.status(404).json({ message: "Reseña no encontrada" });
-    }
-
-    res.json(visibleReview(review, req.usuario));
+    res.json(await visible(review, req.usuario));
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "No se pudo cargar la reseña" });
+    next(error);
   }
 }
 
-export async function createReview(req, res) {
+export async function createReview(req, res, next) {
   try {
-    const review = await reviewsService.createReview({
-      ...req.body,
+    const data = await reviewSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
+    const review = await reviews.createReview({
+      ...data,
       username: req.usuario.nombre,
       userId: req.usuario._id,
     });
-
-    res.status(201).json(review);
+    res.status(201).json(await visible(review, req.usuario));
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "No se pudo crear la reseña" });
+    next(error);
   }
 }
 
-export async function updateReview(req, res) {
+export async function updateReview(req, res, next) {
   try {
-    const existingReview = await reviewsService.getReviewById(req.params.id);
-
-    if (!existingReview) {
+    const current = await reviews.getReviewById(req.params.id);
+    if (!current)
       return res.status(404).json({ message: "Reseña no encontrada" });
-    }
-
-    if (!canManageReview(existingReview, req.usuario)) {
+    if (!canManage(current, req.usuario))
       return res.status(403).json({ message: "No podés editar esta reseña" });
-    }
-
-    const review = await reviewsService.updateReview(req.params.id, req.body, {
-      userId: existingReview.userId || req.usuario._id,
-      username: existingReview.username || req.usuario.nombre,
+    const data = await reviewSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true,
     });
-
-    res.json(review);
+    const review = await reviews.updateReview(req.params.id, data, {
+      userId: current.userId || req.usuario._id,
+      username: current.username || req.usuario.nombre,
+    });
+    res.json(await visible(review, req.usuario));
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "No se pudo actualizar la reseña" });
+    next(error);
   }
 }
 
-export async function deleteReview(req, res) {
+export async function deleteReview(req, res, next) {
   try {
-    const existingReview = await reviewsService.getReviewById(req.params.id);
-
-    if (!existingReview) {
+    const current = await reviews.getReviewById(req.params.id);
+    if (!current)
       return res.status(404).json({ message: "Reseña no encontrada" });
-    }
-
-    if (!canManageReview(existingReview, req.usuario)) {
+    if (!canManage(current, req.usuario))
       return res.status(403).json({ message: "No podés eliminar esta reseña" });
-    }
-
-    await reviewsService.deleteReview(req.params.id);
+    await reviews.deleteReview(req.params.id);
+    await community.deleteRelated("review", req.params.id);
     res.json({ deleted: req.params.id });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "No se pudo eliminar la reseña" });
+    next(error);
   }
 }
+
+export async function getComments(req, res, next) {
+  try {
+    res.json(
+      await community.listComments("review", req.params.id, req.usuario?._id),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function addComment(req, res, next) {
+  try {
+    const current = await reviews.getReviewById(req.params.id);
+    if (!current)
+      return res.status(404).json({ message: "Reseña no encontrada" });
+    const data = await commentSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
+    res.status(201).json(
+      await community.addComment({
+        userId: req.usuario._id,
+        targetType: "review",
+        targetId: current._id,
+        authorId: current.userId,
+        text: data.text,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resonate(req, res, next) {
+  try {
+    const current = await reviews.getReviewById(req.params.id);
+    if (!current)
+      return res.status(404).json({ message: "Reseña no encontrada" });
+    res.json(
+      await community.toggleResonance(
+        req.usuario._id,
+        "review",
+        current._id,
+        current.userId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export { canManage as canManageReview, visible as visibleReview };

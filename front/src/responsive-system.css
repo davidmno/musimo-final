@@ -1,0 +1,621 @@
+/*
+ * Contrato responsive de musimo
+ * -----------------------------
+ * Esta es la única capa autorizada para ajustes generales por tamaño de
+ * pantalla. Se carga al final para estabilizar la hoja histórica sin cambiar
+ * el diseño de escritorio aprobado. Los cortes responden al contenido:
+ *   - 64rem: tablet / escritorio angosto
+ *   - 48rem: navegación móvil y una sola columna
+ *   - 30rem: teléfonos angostos
+ */
+
+:root {
+  --page-gutter: 24px;
+  --mobile-tabbar-height: 64px;
+  --touch-target: 44px;
+  --reading-measure: 68ch;
+}
+
+/* Primitivas seguras para cualquier componente reutilizable. */
+img,
+svg,
+video { max-width: 100%; }
+
+:where(
+  .app-page,
+  .page-heading-copy,
+  .home-main-content,
+  .community-main,
+  .release-detail-content,
+  .review-detail-content,
+  .creation-editor-main,
+  .creation-editor-sidebar,
+  .profile-tab-panel,
+  .story-tile,
+  .list-tile,
+  .release-tile
+) { min-width: 0; }
+
+:where(p, a, strong, small, h1, h2, h3, h4, label) {
+  overflow-wrap: anywhere;
+}
+
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.story-excerpt--clamped { overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Tablet y ventanas angostas: conserva la composición, reduce el aire. */
+@media (max-width: 64rem) {
+  .app-page,
+  .app-page.app-page-wide,
+  .settings-page {
+    width: min(calc(100% - 40px), var(--content-width));
+  }
+
+  .home-content-layout {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .release-detail-shell {
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .review-detail-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .community-layout {
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: 32px;
+  }
+
+  .public-profile-overview { gap: 32px; }
+}
+
+/* Móvil: una columna, navegación inferior y jerarquía editorial común. */
+@media (max-width: 48rem) {
+  :root {
+    --nav-height: 0px;
+    --page-heading-height: auto;
+    --page-heading-gap: 36px;
+    --page-gutter: 16px;
+  }
+
+  html { scroll-padding-bottom: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom)); }
+
+  body {
+    padding-bottom: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom));
+    font-size: 14px;
+  }
+
+  .app-nav-wrap { height: 0; border: 0; }
+  .nav-float { display: none; }
+
+  .mobile-tabbar {
+    height: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--border);
+    background: rgba(17, 17, 16, .97);
+  }
+
+  .mobile-tabbar a {
+    min-height: var(--touch-target);
+    padding: 6px 4px;
+  }
+
+  .app-page,
+  .app-page.app-page-wide,
+  .settings-page,
+  .story-detail-page {
+    width: calc(100% - (var(--page-gutter) * 2));
+    min-height: calc(100dvh - var(--mobile-tabbar-height));
+    padding: 28px 0 48px;
+  }
+
+  /* Todas las cabeceras de página comparten separación y escala. */
+  .page-hero,
+  .release-detail-header,
+  .review-detail-content .story-detail > header,
+  .list-detail-header {
+    height: auto;
+    min-height: 0;
+    margin-bottom: var(--page-heading-gap);
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-heading-copy > h1,
+  .page-hero h1,
+  .release-detail-header h1,
+  .review-detail-content .story-detail header h1,
+  .list-detail-header h1,
+  .artist-hero.artist-hero-compact.artist-page-header h1 {
+    margin: 3px 0 8px;
+    font-size: clamp(1.9rem, 9vw, 2.45rem);
+    line-height: 1.05;
+  }
+
+  .page-hero {
+    display: grid;
+    gap: 18px;
+  }
+
+  .page-hero > :not(:first-child) {
+    width: 100%;
+    align-self: start;
+  }
+
+  .page-hero .form-actions,
+  .creation-editor-heading .form-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .page-hero .form-actions .btn,
+  .creation-editor-heading .form-actions .btn { width: 100%; }
+
+  .page-hero-trail {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+
+  .page-hero-trail::-webkit-scrollbar { display: none; }
+
+  /* En poco ancho se conserva el origen y el destino; los pasos intermedios
+     siguen disponibles en tablet y escritorio. */
+  .page-hero-trail > span:not(:first-child):not(:last-child) { display: none; }
+
+  .section-header {
+    min-height: 32px;
+    gap: 12px;
+  }
+
+  .home-section { margin-bottom: 48px; }
+  .home-content-layout { display: block; }
+  .home-sidebar {
+    position: static;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    margin-bottom: 48px;
+  }
+  .home-review-queue { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .community-layout { grid-template-columns: minmax(0, 1fr); }
+  .community-sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 38px;
+  }
+
+  .community-feed-controls,
+  .community-audience-filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .community-audience-filter select { width: 100%; }
+
+  .release-detail-shell,
+  .review-detail-shell,
+  .release-reviews-layout { display: block; }
+
+  .release-sticky-column,
+  .review-release-context,
+  .release-reviews-context {
+    position: static;
+    width: min(72vw, 280px);
+    margin: 0 auto 32px;
+  }
+
+  .release-sidebar-actions { width: 100%; }
+  .release-reviews-layout { margin-top: 0; }
+  .release-review-preview-grid,
+  .release-reviews-grid { grid-template-columns: minmax(0, 1fr); }
+  .more-releases-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .artist-hero.artist-hero-compact.artist-page-header {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 16px;
+    margin-bottom: var(--page-heading-gap);
+    padding-bottom: 24px;
+  }
+
+  .artist-hero.artist-hero-compact.artist-page-header .artist-monogram {
+    width: 82px;
+    min-width: 82px;
+    max-width: 82px;
+    block-size: 82px;
+    flex: 0 0 82px;
+    aspect-ratio: 1;
+    justify-self: start;
+    font-size: 2rem;
+  }
+
+  .creation-editor-columns,
+  .review-editor-columns,
+  .list-editor-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .selected-list-items { max-height: min(45dvh, 360px); }
+
+  .search-box--large,
+  .search-recent-section { max-width: none; }
+
+  .filter-pills,
+  .profile-tabs {
+    width: 100%;
+    gap: 20px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .filter-pills::-webkit-scrollbar,
+  .profile-tabs::-webkit-scrollbar { display: none; }
+
+  .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .people-grid,
+  .recent-grid,
+  .lists-manage-grid { grid-template-columns: minmax(0, 1fr); }
+
+  .public-profile-header {
+    min-height: 0;
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .public-profile-header .profile-photo {
+    width: 78px;
+    height: 78px;
+  }
+
+  .public-profile-counts {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .public-profile-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 38px;
+  }
+
+  .public-profile-page .profile-followed-artists {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .public-profile-page .profile-saved-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .profile-account-editor,
+  .connections-dialog,
+  .confirm-dialog {
+    max-width: calc(100% - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .profile-account-editor { overflow-y: auto; }
+
+  .notification-list > a { padding: 14px 0; }
+
+  .app-footer { display: none; }
+}
+
+/* Teléfonos angostos: mantiene densidad sin generar scroll horizontal. */
+@media (max-width: 30rem) {
+  :root { --page-gutter: 16px; }
+
+  .page-hero .form-actions,
+  .creation-editor-heading .form-actions { grid-template-columns: minmax(0, 1fr); }
+
+  .creation-editor-heading .form-actions { display: flex; flex-direction: column-reverse; }
+
+  .home-review-queue,
+  .public-profile-page .profile-saved-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .community-sidebar { grid-template-columns: minmax(0, 1fr); }
+
+  .horizontal-grid .release-tile { width: 134px; }
+  .horizontal-grid .story-tile { width: min(270px, calc(100vw - 48px)); }
+  .horizontal-grid .list-tile { width: min(270px, calc(100vw - 48px)); }
+
+  .release-sticky-column,
+  .review-release-context { width: min(78vw, 280px); }
+
+  .review-selected-release { grid-template-columns: 88px minmax(0, 1fr); }
+  .selected-list-items article { grid-template-columns: 18px 24px 46px minmax(0, 1fr); }
+
+  .profile-title-line {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-title-line > div:last-child { width: 100%; }
+
+  .profile-account-editor .two-columns { grid-template-columns: minmax(0, 1fr); }
+
+  .community-pagination {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .community-pagination > div {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* En pantallas táctiles priorizamos blancos de toque cómodos. */
+@media (hover: none) and (pointer: coarse) {
+  :where(
+    .btn,
+    .search-clear,
+    .filter-pills button,
+    .profile-tabs button,
+    .story-actions button,
+    .comments-actions button,
+    .carousel-control,
+    .profile-card-remove
+  ) { min-height: var(--touch-target); }
+
+  :where(.search-clear, .profile-card-remove) { min-width: var(--touch-target); }
+}
+
+/* Integración móvil 2026: solo modifica la experiencia por debajo de 768 px. */
+@media (max-width: 48rem) {
+  :root {
+    --nav-height: 58px;
+    --mobile-tabbar-height: 68px;
+  }
+
+  .app-nav-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 3000;
+    width: 100%;
+    height: calc(var(--nav-height) + env(safe-area-inset-top));
+    display: block;
+    padding-top: env(safe-area-inset-top);
+    border-bottom: 1px solid var(--border-soft);
+    background: rgba(17, 17, 16, .97);
+  }
+
+  .mobile-app-header {
+    width: 100%;
+    height: var(--nav-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--page-gutter);
+  }
+
+  .mobile-app-logo img { width: 72px; max-height: 28px; object-fit: contain; }
+  .mobile-notification-trigger {
+    position: relative;
+    width: var(--touch-target);
+    height: var(--touch-target);
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: none;
+    color: var(--text);
+  }
+
+  .mobile-notification-trigger .notification-badge { position: absolute; top: 1px; right: 0; }
+
+  .mobile-tabbar {
+    display: grid;
+    position: fixed;
+    z-index: 3000;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom));
+    padding: 6px 8px env(safe-area-inset-bottom);
+  }
+
+  .mobile-tabbar a,
+  .mobile-tabbar button {
+    min-width: 0;
+    height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .mobile-tabbar a.active,
+  .mobile-tabbar button.active { color: var(--primary); background: rgba(192, 69, 27, .1); }
+  .mobile-tabbar small { font-size: 10px; }
+
+  .app-page,
+  .app-page.app-page-wide,
+  .settings-page,
+  .story-detail-page {
+    min-height: calc(100dvh - var(--nav-height) - var(--mobile-tabbar-height));
+    padding-top: 24px;
+  }
+
+  .page-hero-trail { display: none; }
+  .mobile-context-row,
+  .mobile-detail-toolbar,
+  .mobile-editor-toolbar {
+    min-height: var(--touch-target);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .mobile-detail-toolbar .back-button,
+  .mobile-context-row .back-button,
+  .mobile-editor-toolbar .back-button { min-height: var(--touch-target); }
+
+  .icon-button {
+    width: var(--touch-target);
+    height: var(--touch-target);
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text);
+  }
+
+  .home-page > .page-hero { display: none; }
+  .home-page { padding-top: 24px; }
+  .home-content-layout { display: flex; flex-direction: column; }
+  .home-sidebar,
+  .home-main-content { display: contents; }
+  .home-section-to-review { order: 1; }
+  .home-section-new-releases { order: 2; }
+  .home-section-reviews { order: 3; }
+  .home-section-lists { order: 4; }
+  .home-section-users { order: 5; }
+  .home-sidebar-section,
+  .home-section { width: 100%; margin: 0 0 42px; }
+
+  .home-review-queue,
+  .home-follow-suggestions {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .home-review-queue::-webkit-scrollbar,
+  .home-follow-suggestions::-webkit-scrollbar { display: none; }
+  .home-review-item { min-width: min(72vw, 250px); scroll-snap-align: start; }
+  .home-follow-suggestions article { min-width: min(82vw, 300px); scroll-snap-align: start; }
+  .home-section .horizontal-grid { padding-bottom: 4px; }
+
+  .release-detail-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .release-sticky-column,
+  .release-detail-content { display: contents; }
+  .release-detail-header,
+  .tracklist-preview,
+  .community-release-section,
+  .more-by-artist,
+  .release-review-preview-grid,
+  .more-releases-grid {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .release-hero-cover {
+    order: 1;
+    width: min(78vw, 310px);
+    margin: 0 auto 24px;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+  .release-detail-header { order: 2; align-items: center; margin-bottom: 20px; text-align: center; }
+  .release-detail-header .artist-link { display: inline-block; }
+  .release-sidebar-actions { order: 3; width: min(100%, 420px); margin: 0 auto 32px; }
+  .tracklist-preview { order: 4; }
+  .community-release-section { order: 5; }
+  .more-by-artist { order: 6; }
+  .release-review-preview-grid {
+    display: flex;
+    grid-template-columns: none;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .release-review-preview-grid::-webkit-scrollbar { display: none; }
+  .release-review-preview-grid > * { min-width: calc(100% - 20px); scroll-snap-align: start; }
+  .more-releases-grid {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .more-releases-grid::-webkit-scrollbar { display: none; }
+  .more-releases-grid > * { width: 138px; min-width: 138px; }
+
+  .review-detail-shell { display: block; }
+  .review-release-context { display: none; }
+  .review-detail-content .story-detail > header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 88px;
+    grid-template-rows: auto auto auto auto;
+    column-gap: 16px;
+    align-items: start;
+    text-align: left;
+  }
+  .review-detail-content .story-detail > header .story-author-heading { grid-column: 1 / -1; grid-row: 1; margin-bottom: 18px; }
+  .review-detail-content .story-detail > header h1 { grid-column: 1; grid-row: 2; }
+  .review-detail-content .story-detail > header > .artist-link { grid-column: 1; grid-row: 3; }
+  .review-detail-content .story-detail > header > .rating-display { grid-column: 1; grid-row: 4; }
+  .review-mobile-cover { grid-column: 2; grid-row: 2 / span 3; display: block; }
+  .review-mobile-cover img { width: 88px; height: 88px; display: block; border-radius: var(--radius); object-fit: cover; }
+  .review-mobile-interaction { display: inline-flex; margin: 0 0 28px; }
+  .story-detail-text { font-size: 1rem; line-height: 1.7; }
+
+  .list-owner-actions { display: none; }
+  .desktop-list-share { display: none; }
+  .list-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
+
+  .creation-desktop-actions { display: none !important; }
+  .mobile-sticky-submit {
+    position: fixed;
+    right: 16px;
+    bottom: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom) + 12px);
+    left: 16px;
+    z-index: 2500;
+    width: calc(100% - 32px);
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .46);
+  }
+  .creation-editor-page { padding-bottom: 120px; }
+
+  .profile-users-list article { align-items: center; }
+  .profile-users-list article > a { flex: 1; }
+}

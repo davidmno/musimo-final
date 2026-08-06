@@ -88,9 +88,12 @@ async function seedCommunity() {
         bio: "",
         avatar: user.nombre.slice(0, 1).toUpperCase(),
         avatarImage: "",
+        favoriteArtists: [],
         followers: 0,
         following: 0,
         top5: [],
+        provider: "email",
+        notificationSettings: { followedUserPosts: false },
         createdAt: new Date(),
       };
 
@@ -115,6 +118,7 @@ async function seedCommunity() {
       await reviews.insertOne({
         ...review,
         userId: userIdsByName.get(review.username) || null,
+        momentoVisibility: "public",
         updatedAt: null,
       });
       console.log(`Reseña creada: ${review.username} - ${review.album}`);

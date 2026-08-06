@@ -1,185 +1,136 @@
-# Musimo — Final de Aplicaciones Híbridas
+# musimo
 
-Musimo es una aplicación web Full Stack de reseñas y curaduría musical. El proyecto está dividido en un **Backend API REST** y un **Frontend React**, con autenticación JWT, MongoDB, FrontOffice y BackOffice.
+musimo es una red social y bitácora musical para escribir reseñas, conservar recuerdos y descubrir música a través de otras personas. Esta entrega mantiene la identidad definida para la tesis —música, significado y momentos— y prepara la aplicación para publicación como PWA.
 
 ## Estructura
 
-```txt
-Parcial 2/
-├── back/   # Node.js, Express, MongoDB, JWT y Yup
-├── front/  # React, Vite, React Router y Context API
-├── netlify.toml
-└── README.md
+```text
+musimo/
+├── front/                  # React 19 + React Router + Vite
+│   ├── public/             # Manifest, service worker, iconos y recursos estáticos
+│   └── src/                # Páginas, componentes, contexto, servicios y estilos
+├── back/                   # Node.js + Express + MongoDB
+│   ├── api/                # Rutas y controladores HTTP
+│   ├── services/           # Reglas de negocio y acceso a datos
+│   ├── schemas/            # Validaciones Yup
+│   ├── middlewares/        # JWT, roles y validación
+│   └── tests/              # Pruebas unitarias con node:test
+├── docs/                   # Informe, publicación, estudio, diseño y verificación
+└── netlify.toml            # Build, redirecciones y cabeceras de Netlify
 ```
 
-## Funcionalidades
+## Requisitos
 
-### FrontOffice
+- Node.js 20.19 o posterior.
+- npm.
+- MongoDB local o MongoDB Atlas.
+- Una URL HTTPS pública para el backend al publicar el frontend.
 
-- Registro e inicio de sesión.
-- Perfil editable y Top 5 personal.
-- Búsqueda de álbumes con Last.fm.
-- Ficha de álbum, canciones y reseñas.
-- Lista personal «Por reseñar».
-- CRUD completo de reseñas.
-- CRUD completo de listas, con búsqueda y agregado de álbumes.
-- Valoración privada: solo puede verla el autor o un administrador.
-
-### BackOffice
-
-- Ruta privada `/admin`.
-- Acceso exclusivo para usuarios con rol `admin`.
-- Listado de usuarios, reseñas y listas.
-- Cambio de roles.
-- Moderación y eliminación de contenido.
-- Eliminación de usuarios.
-
-## Seguridad y permisos
-
-- Las contraseñas se almacenan cifradas con bcrypt.
-- La autenticación utiliza JWT.
-- Las rutas privadas validan el token.
-- Solo el propietario o un administrador puede editar o eliminar una reseña o lista.
-- Las credenciales y secretos se configuran mediante variables de entorno.
-
-## Instalación local
+## Inicio local
 
 ### Backend
 
 ```bash
 cd back
-npm install
-```
-
-Copiar `back/.env.example` como `back/.env` y completar:
-
-```env
-PORT=3333
-DB_URL=mongodb+srv://...
-DB_NAME=musimo
-JWT_SECRET=...
-LASTFM_API_KEY=...
-FRONTEND_URL=http://localhost:5173
-ADMIN_EMAIL=admin@musimo.com
-```
-
-Iniciar:
-
-```bash
+cp .env.example .env
+npm ci
+npm run check
+npm test
 npm run dev
 ```
 
-Comprobar la API:
-
-```txt
-http://localhost:3333/api/health
-```
+Completá `back/.env` antes de iniciar. La API queda, por defecto, en `http://localhost:3333/api` y su control de salud en `http://localhost:3333/api/health`.
 
 ### Frontend
 
+En otra terminal:
+
 ```bash
 cd front
-npm install
+cp .env.example .env.local
+npm ci
+npm run lint
 npm run dev
 ```
 
-En desarrollo se utiliza `front/.env.development`:
+La aplicación queda, por defecto, en `http://localhost:5173`.
+
+## Variables de entorno
+
+### Frontend
 
 ```env
 VITE_API_URL=http://localhost:3333/api
 ```
 
-## Crear el usuario administrador
+En Netlify debe apuntar a la API pública HTTPS, siempre terminada en `/api`.
 
-1. Registrar normalmente la cuenta que será administradora.
-2. Desde `back/`, ejecutar:
+### Backend
 
-```bash
-npm run make-admin -- correo@ejemplo.com
-```
-
-3. Recargar la aplicación o volver a iniciar sesión para actualizar el rol en el frontend.
-4. Ingresar en `/admin`.
-
-## Actualizar datos creados con la versión del parcial
-
-Si la base ya contiene reseñas o listas antiguas sin identificador de propietario, ejecutar una vez:
-
-```bash
-cd back
-npm run migrate:ownership
-```
-
-El script relaciona los registros anteriores con los usuarios existentes usando el nombre con el que fueron creados.
-
-## Endpoints principales
-
-### Sesión y usuarios
-
-```txt
-POST   /api/usuarios/register
-POST   /api/usuarios/login
-GET    /api/usuarios/me
-PATCH  /api/usuarios/me/profile
-GET    /api/usuarios                 admin
-GET    /api/usuarios/:id             admin
-PATCH  /api/usuarios/:id/rol         admin
-DELETE /api/usuarios/:id             admin
-```
-
-### Reseñas
-
-```txt
-GET    /api/reviews                   autenticado
-GET    /api/reviews/:id               autenticado
-POST   /api/reviews                   autenticado
-PUT    /api/reviews/:id               propietario o admin
-DELETE /api/reviews/:id               propietario o admin
-```
-
-### Listas
-
-```txt
-GET    /api/lists
-GET    /api/lists/:id
-POST   /api/lists                     autenticado
-PUT    /api/lists/:id                 propietario o admin
-DELETE /api/lists/:id                 propietario o admin
-```
-
-### Catálogo externo
-
-```txt
-GET /api/lastfm/albums?q=...
-GET /api/lastfm/album-info?artist=...&album=...
-GET /api/lastfm/artist-albums?artist=...
-GET /api/covers/resolve
-```
-
-## Preparación para deploy
-
-### Backend en Render
-
-- Root directory: `back`
-- Build command: `npm install`
-- Start command: `npm start`
-- Cargar en el panel las variables de `back/.env.example`.
-- En `FRONTEND_URL`, colocar la URL final de Netlify.
-
-### Frontend en Netlify
-
-El archivo `netlify.toml` configura el directorio `front`, el build de Vite y el fallback de SPA.
-
-En Netlify se debe crear:
+Las variables disponibles están documentadas en `back/.env.example`. Las obligatorias para iniciar son:
 
 ```env
-VITE_API_URL=https://URL-DEL-BACKEND/api
+PORT=3333
+DB_URL=mongodb+srv://...
+DB_NAME=musimo
+JWT_SECRET=una-clave-larga-y-aleatoria
+FRONTEND_URL=http://localhost:5173
+MUSICBRAINZ_USER_AGENT=musimo/1.0 (contacto@ejemplo.com)
+CONTACT_EMAIL=contacto@ejemplo.com
 ```
 
-El archivo `front/public/_redirects` evita errores 404 al recargar rutas internas de React Router.
+`RESEND_API_KEY` y `EMAIL_FROM` habilitan el envío real de correos de recuperación. Ningún secreto debe guardarse en variables que comiencen con `VITE_`, porque esas variables se incorporan al frontend.
 
-## Importante
+## Verificación
 
-- No subir `back/.env` al repositorio.
-- No colocar `DB_URL`, `JWT_SECRET` ni `LASTFM_API_KEY` en variables `VITE_`.
-- `VITE_API_URL` no es un secreto: es la dirección pública de la API.
+```bash
+cd front
+npm run lint
+npm run build
+
+cd ../back
+npm run check
+npm test
+```
+
+En esta revisión se validaron el lint del frontend, la sintaxis del backend, las once pruebas existentes, los JSON, el CSS, el service worker y las dimensiones de los iconos. La recompilación de producción debe ejecutarse después de un `npm ci` limpio en el sistema de destino; ver la limitación técnica detallada en `docs/INFORME_CAMBIOS.md`.
+
+
+## Cambios de esta versión
+
+- Botón **Instalar app** prominente en la landing, con instalación nativa cuando está disponible e instrucciones específicas para iPhone/iPad.
+- Iconos PWA regenerados desde la identidad blanca elegida para celulares.
+- Búsqueda de artistas separada de la búsqueda de lanzamientos.
+- Reutilización de la discografía individual del artista para completar resultados en Descubrir y Nueva lista.
+- Eliminación de solicitudes de discografía por cada tarjeta de artista, reduciendo la cola de consultas externas.
+
+## Publicación
+
+El repositorio incluye `netlify.toml` y `front/public/_redirects`. Netlify debe:
+
+- tomar `front` como base;
+- ejecutar `npm run build`;
+- publicar `front/dist`;
+- recibir `VITE_API_URL` como variable de entorno.
+
+Publicá primero el backend y configurá allí `FRONTEND_URL=https://musimo.netlify.app`. Después desplegá el frontend.
+
+## Documentación de esta entrega
+
+- [Informe de cambios](docs/INFORME_CAMBIOS.md)
+- [Guía de publicación](docs/GUIA_PUBLICACION.md)
+- [Resumen para estudiar el código](docs/RESUMEN_CODIGO.md)
+- [Sistema de diseño](docs/SISTEMA_DISENO.md)
+- [Verificación final](docs/VERIFICACION_FINAL.md)
+- [Publicar mañana](docs/PASOS_PUBLICAR_MANANA.md)
+- [Informe PWA y búsqueda](docs/INFORME_PWA_Y_BUSQUEDA.md)
+
+## Seguridad y privacidad implementadas
+
+- Las contraseñas se procesan con bcrypt en el backend.
+- Las rutas privadas exigen JWT y las administrativas también verifican el rol.
+- La API valida la autoría antes de editar o eliminar contenido.
+- El Momento privado y la valoración personal se filtran para terceros.
+- Las listas privadas sólo se entregan a su propietario o a un administrador.
+- El service worker no intercepta solicitudes de API, solicitudes autenticadas ni operaciones que no sean `GET`.
+- El ZIP de entrega no incluye `.env`, `node_modules`, `dist`, `.git`, logs ni cachés.

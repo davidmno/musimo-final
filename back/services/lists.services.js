@@ -1,79 +1,70 @@
-import dotenv from "dotenv";
-dotenv.config();
+import { asObjectId, getDb, idString } from "../config/db.js";
 
-import { MongoClient, ObjectId } from "mongodb";
-
-const client = new MongoClient(process.env.DB_URL);
-await client.connect();
-const db = client.db(process.env.DB_NAME);
-const collection = db.collection("lists");
-
-function toObjectId(id) {
-  return ObjectId.isValid(id) ? new ObjectId(id) : null;
+function visibilityQuery(viewerId) {
+  const publicQuery = { visibility: { $ne: "private" } };
+  return viewerId
+    ? { $or: [publicQuery, { ownerId: idString(viewerId) }] }
+    : publicQuery;
 }
 
-export function getLists() {
-  return collection.find().sort({ createdAt: -1 }).toArray();
+export async function getLists(filters = {}, viewerId = null) {
+  const db = await getDb();
+  const query = visibilityQuery(viewerId);
+  if (filters.ownerId) query.ownerId = idString(filters.ownerId);
+  return db.collection("lists").find(query).sort({ createdAt: -1 }).limit(100).toArray();
 }
 
-export function getListById(id) {
-  const objectId = toObjectId(id);
+export async function getListById(id) {
+  const objectId = asObjectId(id);
   if (!objectId) return null;
-
-  return collection.findOne({ _id: objectId });
+  const db = await getDb();
+  return db.collection("lists").findOne({ _id: objectId });
 }
 
 export async function createList(list) {
+  const db = await getDb();
   const newList = {
     title: list.title,
     description: list.description || "",
+    visibility: list.visibility || "public",
     albums: list.albums || [],
-    ownerId: list.ownerId || null,
+    ownerId: idString(list.ownerId),
     ownerName: list.ownerName || "Usuario",
+    ownerHandle: list.ownerHandle || "",
     owner: list.ownerName || "Usuario",
     createdAt: new Date(),
     updatedAt: null,
   };
-
-  const result = await collection.insertOne(newList);
-
-  return {
-    ...newList,
-    _id: result.insertedId,
-  };
+  const result = await db.collection("lists").insertOne(newList);
+  return { ...newList, _id: result.insertedId };
 }
 
 export async function updateList(id, list, ownerData = {}) {
-  const objectId = toObjectId(id);
+  const objectId = asObjectId(id);
   if (!objectId) return null;
-
-  const updatedList = {
+  const db = await getDb();
+  const update = {
     title: list.title,
     description: list.description || "",
+    visibility: list.visibility || "public",
     albums: list.albums || [],
+    ownerId: idString(ownerData.ownerId),
+    ownerName: ownerData.ownerName || "Usuario",
+    ownerHandle: ownerData.ownerHandle || "",
+    owner: ownerData.ownerName || "Usuario",
     updatedAt: new Date(),
   };
-
-  if (ownerData.ownerId) updatedList.ownerId = ownerData.ownerId;
-  if (ownerData.ownerName) {
-    updatedList.ownerName = ownerData.ownerName;
-    updatedList.owner = ownerData.ownerName;
-  }
-
-  const result = await collection.updateOne(
+  return db.collection("lists").findOneAndUpdate(
     { _id: objectId },
-    { $set: updatedList },
+    { $set: update },
+    { returnDocument: "after" },
   );
-
-  if (!result.matchedCount) return null;
-
-  return collection.findOne({ _id: objectId });
 }
 
 export async function deleteList(id) {
-  const objectId = toObjectId(id);
+  const objectId = asObjectId(id);
   if (!objectId) return false;
-
-  const result = await collection.deleteOne({ _id: objectId });
+  const db = await getDb();
+  const result = await db.collection("lists").deleteOne({ _id: objectId });
   return result.deletedCount === 1;
 }

@@ -1,150 +1,210 @@
 import * as services from "../../services/usuarios.services.js";
 import {
+  changePasswordSchema,
+  forgotPasswordSchema,
   loginSchema,
+  notificationSettingsSchema,
   profileSchema,
   registerSchema,
+  resetPasswordSchema,
   roleSchema,
 } from "../../schemas/usuarios.schema.js";
 
-export async function registerUser(req, res) {
-  try {
-    const data = await registerSchema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
+async function validate(schema, body) {
+  return schema.validate(body, { abortEarly: false, stripUnknown: true });
+}
 
-    const usuario = await services.registerUser(data);
-    res.status(201).json(usuario);
+export async function registerUser(req, res, next) {
+  try {
+    res
+      .status(201)
+      .json(
+        await services.registerUser(await validate(registerSchema, req.body)),
+      );
   } catch (error) {
-    res.status(400).json({
-      message: "Datos inválidos",
-      errors: error.errors || [error.message],
-    });
+    next(error);
   }
 }
 
-export async function login(req, res) {
+export async function login(req, res, next) {
   try {
-    const data = await loginSchema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
-
-    const usuario = await services.login(data);
-    res.status(200).json(usuario);
+    res.json(await services.login(await validate(loginSchema, req.body)));
   } catch (error) {
-    res.status(400).json({
-      message: "No se pudo iniciar sesión",
-      errors: error.errors || [error.message],
-    });
+    next(error);
   }
 }
 
-export async function getUsers(req, res) {
+export async function forgotPassword(req, res, next) {
   try {
-    const usuarios = await services.getUsers();
-    res.status(200).json(usuarios);
+    const data = await validate(forgotPasswordSchema, req.body);
+    res.json(await services.requestPasswordReset(data.email));
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error del servidor" });
+    next(error);
   }
 }
 
-export async function getUserById(req, res) {
+export async function resetPassword(req, res, next) {
   try {
-    const usuario = await services.getUserById(req.params.id);
-
-    if (!usuario) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    res.status(200).json(usuario);
+    const data = await validate(resetPasswordSchema, req.body);
+    res.json(await services.resetPassword(data.token, data.password));
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error del servidor" });
+    next(error);
   }
 }
 
-export async function getCurrentUser(req, res) {
+export async function changePassword(req, res, next) {
   try {
-    const usuario = await services.getCurrentUser(req.usuario._id);
-    res.status(200).json(usuario);
-  } catch (error) {
-    res.status(404).json({
-      message: error.message || "Usuario no encontrado",
-    });
-  }
-}
-
-export async function updateCurrentUserProfile(req, res) {
-  try {
-    const data = await profileSchema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
-
-    const usuario = await services.updateCurrentUserProfile(
-      req.usuario._id,
-      data,
+    const data = await validate(changePasswordSchema, req.body);
+    res.json(
+      await services.changePassword(
+        req.usuario._id,
+        data.currentPassword,
+        data.newPassword,
+      ),
     );
-
-    res.status(200).json(usuario);
   } catch (error) {
-    res.status(400).json({
-      message: "No se pudo actualizar el perfil",
-      errors: error.errors || [error.message],
-    });
+    next(error);
   }
 }
 
-export async function updateUserRole(req, res) {
+export async function getCurrentUser(req, res, next) {
   try {
-    const data = await roleSchema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
+    res.json(await services.getCurrentUser(req.usuario._id));
+  } catch (error) {
+    next(error);
+  }
+}
 
+export async function getPublicProfile(req, res, next) {
+  try {
+    const profile = await services.getPublicProfile(
+      req.params.handle,
+      req.usuario?._id,
+    );
+    if (!profile)
+      return res.status(404).json({ message: "Perfil no encontrado" });
+    res.json(profile);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateCurrentUserProfile(req, res, next) {
+  try {
+    res.json(
+      await services.updateCurrentUserProfile(
+        req.usuario._id,
+        await validate(profileSchema, req.body),
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function searchUsers(req, res, next) {
+  try {
+    res.json(await services.searchUsers(req.query.q || "", req.query.limit));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function followUser(req, res, next) {
+  try {
+    res.json(await services.followUser(req.usuario._id, req.params.id));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function unfollowUser(req, res, next) {
+  try {
+    res.json(await services.unfollowUser(req.usuario._id, req.params.id));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getConnections(req, res, next) {
+  try {
+    if (!["followers", "following"].includes(req.params.type)) {
+      return res.status(400).json({ message: "Tipo de conexión inválido" });
+    }
+    res.json(await services.listConnections(req.params.id, req.params.type));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getFollowedArtists(req, res, next) {
+  try {
+    res.json(await services.listFollowedArtists(req.params.id));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateNotificationSettings(req, res, next) {
+  try {
+    const data = await validate(notificationSettingsSchema, req.body);
+    res.json(await services.updateNotificationSettings(req.usuario._id, data));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getUsers(req, res, next) {
+  try {
+    res.json(await services.getUsers());
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getUserById(req, res, next) {
+  try {
+    const user = await services.getUserById(req.params.id);
+    if (!user)
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateUserRole(req, res, next) {
+  try {
+    const data = await validate(roleSchema, req.body);
     if (
       String(req.params.id) === String(req.usuario._id) &&
       data.rol !== "admin"
     ) {
       return res
         .status(400)
-        .json({ message: "No podés quitarte tu propio rol de administrador" });
+        .json({ message: "No podés quitarte tu propio rol" });
     }
-
-    const usuario = await services.updateUserRole(req.params.id, data.rol);
-
-    if (!usuario) {
+    const user = await services.updateUserRole(req.params.id, data.rol);
+    if (!user)
       return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    res.json(usuario);
+    res.json(user);
   } catch (error) {
-    res.status(400).json({
-      message: "No se pudo actualizar el rol",
-      errors: error.errors || [error.message],
-    });
+    next(error);
   }
 }
 
-export async function deleteUser(req, res) {
+export async function deleteUser(req, res, next) {
   try {
     if (String(req.params.id) === String(req.usuario._id)) {
       return res
         .status(400)
         .json({ message: "No podés eliminar tu propia cuenta administradora" });
     }
-
-    const deleted = await services.deleteUser(req.params.id);
-
-    if (!deleted) {
+    if (!(await services.deleteUser(req.params.id))) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
-
     res.json({ deleted: req.params.id });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "No se pudo eliminar el usuario" });
+    next(error);
   }
 }

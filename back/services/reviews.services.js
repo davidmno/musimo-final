@@ -1,87 +1,85 @@
-import dotenv from "dotenv";
-dotenv.config();
+import { asObjectId, getDb, idString } from "../config/db.js";
+import { removeReviewedRelease } from "./community.services.js";
 
-import { MongoClient, ObjectId } from "mongodb";
-
-const client = new MongoClient(process.env.DB_URL);
-await client.connect();
-const db = client.db(process.env.DB_NAME);
-const collection = db.collection("reviews");
-
-function toObjectId(id) {
-  return ObjectId.isValid(id) ? new ObjectId(id) : null;
+function queryFrom(filters = {}) {
+  const query = {};
+  if (filters.releaseId) query.catalogId = filters.releaseId;
+  if (filters.userId) query.userId = idString(filters.userId);
+  if (filters.artistId) query.artistId = filters.artistId;
+  return query;
 }
 
-export function getReviews() {
-  return collection.find().sort({ createdAt: -1 }).toArray();
+export async function getReviews(filters = {}) {
+  const db = await getDb();
+  return db.collection("reviews").find(queryFrom(filters)).sort({ createdAt: -1 }).limit(100).toArray();
 }
 
-export function getReviewById(id) {
-  const objectId = toObjectId(id);
+export async function getReviewById(id) {
+  const objectId = asObjectId(id);
   if (!objectId) return null;
-
-  return collection.findOne({ _id: objectId });
+  const db = await getDb();
+  return db.collection("reviews").findOne({ _id: objectId });
 }
 
 export async function createReview(review) {
+  const db = await getDb();
   const newReview = {
+    catalogId: review.catalogId || null,
+    artistId: review.artistId || null,
     artist: review.artist,
     album: review.album,
     image: review.image || "",
     text: review.text,
     username: review.username || "Usuario",
-    userId: review.userId || null,
-    rating: review.rating ?? null,
+    userId: idString(review.userId),
+    rating: review.rating,
     significado: review.significado || [],
     momento: review.momento || "",
+    momentoVisibility: review.momentoVisibility || "public",
     releaseType: review.releaseType || "Álbum",
+    releaseDate: review.releaseDate || null,
     year: review.year || null,
     createdAt: new Date(),
     updatedAt: null,
   };
-
-  const result = await collection.insertOne(newReview);
-
-  return {
-    ...newReview,
-    _id: result.insertedId,
-  };
+  const result = await db.collection("reviews").insertOne(newReview);
+  await removeReviewedRelease(review.userId, newReview);
+  return { ...newReview, _id: result.insertedId };
 }
 
 export async function updateReview(id, review, ownerData = {}) {
-  const objectId = toObjectId(id);
+  const objectId = asObjectId(id);
   if (!objectId) return null;
-
-  const updatedReview = {
+  const db = await getDb();
+  const update = {
+    catalogId: review.catalogId || null,
+    artistId: review.artistId || null,
     artist: review.artist,
     album: review.album,
     image: review.image || "",
     text: review.text,
-    rating: review.rating ?? null,
+    rating: review.rating,
     significado: review.significado || [],
     momento: review.momento || "",
+    momentoVisibility: review.momentoVisibility || "public",
     releaseType: review.releaseType || "Álbum",
+    releaseDate: review.releaseDate || null,
     year: review.year || null,
+    userId: idString(ownerData.userId),
+    username: ownerData.username || "Usuario",
     updatedAt: new Date(),
   };
-
-  if (ownerData.userId) updatedReview.userId = ownerData.userId;
-  if (ownerData.username) updatedReview.username = ownerData.username;
-
-  const result = await collection.updateOne(
+  return db.collection("reviews").findOneAndUpdate(
     { _id: objectId },
-    { $set: updatedReview },
+    { $set: update },
+    { returnDocument: "after" },
   );
-
-  if (!result.matchedCount) return null;
-
-  return collection.findOne({ _id: objectId });
 }
 
 export async function deleteReview(id) {
-  const objectId = toObjectId(id);
+  const objectId = asObjectId(id);
   if (!objectId) return false;
-
-  const result = await collection.deleteOne({ _id: objectId });
+  const db = await getDb();
+  const result = await db.collection("reviews").deleteOne({ _id: objectId });
   return result.deletedCount === 1;
 }

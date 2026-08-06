@@ -1,219 +1,513 @@
+import { useCallback, useEffect, useState } from "react";
 import {
   Link,
   useNavigate,
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { useEffect, useState } from "react";
-
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { useAuth } from "../context/auth-context";
-import { deleteReview, getReview } from "../services/reviews.service";
+import Comments from "../components/comments";
+import StatusMessage from "../components/status-message";
+import {
+  Avatar,
+  fallbackCover,
+} from "../components/content-cards";
+import ConfirmDialog from "../components/confirm-dialog";
+import { PageTrail } from "../components/page-header";
+import {
+  commentReview,
+  deleteReview,
+  getReview,
+  getReviewComments,
+  resonateReview,
+} from "../services/reviews.service";
 import { getAlbumUrl } from "../services/album-link.service";
+import { getArtistUrl } from "../services/artist-link.service";
+import { setBreadcrumbContext } from "../services/breadcrumb.service";
+import BackButton from "../components/back-button";
+import ActionSheet from "../components/action-sheet";
+import AppIcon from "../components/app-icon";
 
-function canManageReview(review, usuario) {
-  if (usuario?.rol === "admin") return true;
+function ReviewRating({
+  value = 0,
+  showEmpty = false,
+}) {
+  const rating = Math.max(
+    0,
+    Math.min(5, Math.round(Number(value) || 0)),
+  );
 
-  if (review?.userId) {
-    return String(review.userId) === String(usuario?._id);
+  if (!rating && !showEmpty) {
+    return null;
   }
 
-  return review?.username === usuario?.nombre;
+  return (
+    <span
+      className="rating-stars rating-display"
+      role="img"
+      aria-label={`${rating} de 5 estrellas`}
+    >
+      {[1, 2, 3, 4, 5].map((star) => (
+        <AppIcon
+          key={star}
+          name="star"
+          size={19}
+          className={
+            star <= rating
+              ? "rating-star is-filled"
+              : "rating-star"
+          }
+          fill={
+            star <= rating
+              ? "currentColor"
+              : "none"
+          }
+        />
+      ))}
+    </span>
+  );
 }
 
-function ReviewDetail() {
+export default function ReviewDetail() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { usuario } = useAuth();
 
   const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [toastVisible, setToastVisible] = useState(Boolean(params.get("saved")));
+  const [confirmDelete, setConfirmDelete] =
+    useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [actionsOpen, setActionsOpen] =
+    useState(false);
+
+  const savedState = params.get("guardada");
+
+  const [status, setStatus] = useState({
+    type: savedState ? "success" : "",
+    text: ["actualizada", "updated"].includes(
+      savedState,
+    )
+      ? "Reseña actualizada."
+      : savedState
+        ? "Reseña publicada."
+        : "",
+  });
 
   useEffect(() => {
-    loadReview();
+    let active = true;
 
-    if (params.get("saved")) {
-      const timer = setTimeout(() => {
-        setToastVisible(false);
-      }, 2200);
+    setLoading(true);
 
-      return () => clearTimeout(timer);
-    }
+    getReview(id)
+      .then((data) => {
+        if (!active) return;
+
+        setReview(data);
+      })
+      .catch((error) => {
+        if (!active) return;
+
+        setReview(null);
+        setStatus({
+          type: "error",
+          text:
+            error.message ||
+            "No pudimos abrir esta reseña.",
+        });
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
-  async function loadReview() {
+  useEffect(() => {
+    if (review) {
+      setBreadcrumbContext({ review });
+    }
+  }, [review]);
+
+  const loadComments = useCallback(
+    () => getReviewComments(id),
+    [id],
+  );
+
+  const addComment = useCallback(
+    (text) => commentReview(id, text),
+    [id],
+  );
+
+  async function resonate() {
     try {
-      const data = await getReview(id);
-      setReview(data);
-    } catch {
-      setReview(null);
+      const data = await resonateReview(id);
+
+      setReview((current) => ({
+        ...current,
+        resonatedByMe: data.resonated,
+      }));
+
+      setStatus({
+        type: "success",
+        text: data.resonated
+          ? "Esta historia resonó con vos."
+          : "Quitaste tu resonancia.",
+      });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        text: error.message,
+      });
+    }
+  }
+
+  async function remove() {
+    if (!review) return;
+
+    setDeleting(true);
+
+    try {
+      await deleteReview(id);
+
+      navigate(getAlbumUrl(review), {
+        replace: true,
+      });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        text: error.message,
+      });
     } finally {
-      setLoading(false);
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   }
-
-  async function handleDelete() {
-    const confirmDelete = window.confirm(
-      "¿Eliminar esta reseña? Esta acción no se puede deshacer.",
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      await deleteReview(review._id);
-      navigate(albumUrl);
-    } catch (deleteError) {
-      setError(deleteError.message || "No se pudo eliminar la reseña.");
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="app-body">
-        <Navbar />
-        <main className="app-page">
-          <p className="loading-text">Cargando reseña…</p>
-        </main>
-      </div>
-    );
-  }
-
-  if (!review) {
-    return (
-      <div className="app-body">
-        <Navbar />
-        <main className="app-page">
-          <p className="empty-state">Reseña no encontrada.</p>
-        </main>
-      </div>
-    );
-  }
-
-  const albumUrl = getAlbumUrl(review);
-  const isOwnerOrAdmin = canManageReview(review, usuario);
-  const stars = [1, 2, 3, 4, 5];
 
   return (
     <div className="app-body">
       <Navbar />
 
-      <main className="app-page">
-        <div id="pageNav">
-          <div className="breadcrumbs">
-            <Link className="crumb" to="/home">Inicio</Link>
-            <span className="crumb-sep">/</span>
-            <Link className="crumb" to="/search">Buscar</Link>
-            <span className="crumb-sep">/</span>
-            <Link className="crumb" to={albumUrl}>{review.album}</Link>
-            <span className="crumb-sep">/</span>
-            <span className="crumb current">Reseña</span>
-          </div>
+      <main className="app-page app-page-wide story-detail-page">
+        {loading && (
+          <p className="loading-text">
+            Cargando historia…
+          </p>
+        )}
 
-          <Link className="back-link" to={albumUrl}>← Volver al álbum</Link>
-        </div>
+        <StatusMessage type={status.type}>
+          {status.text}
+        </StatusMessage>
 
-        <div id="reviewContent">
-          <div className="review-page-header">
-            <div className="user-avatar">{(review.username || "U")[0]}</div>
-            <span>{review.username || "Usuario"}</span>
-          </div>
+        {!loading && !review && (
+          <section className="review-load-error empty-state">
+            <h1>No pudimos abrir esta reseña</h1>
 
-          <div className="review-hero">
-            <img
-              src={review.image || "/images/cover-placeholder.png"}
-              alt={review.album}
-            />
+            <p>
+              La reseña puede no existir o no estar
+              disponible en este momento.
+            </p>
 
-            <div>
-              <h1>{review.album}</h1>
-              <p>
-                {review.artist}
-                {review.year ? ` · ${review.year}` : ""}
-              </p>
-
-              {isOwnerOrAdmin && (
-                <div className="stars" aria-label="Valoración">
-                  {review.rating ? (
-                    stars.map((star) => (
-                      <span
-                        className={`star ${
-                          star <= Number(review.rating) ? "filled" : ""
-                        }`}
-                        key={star}
-                      >
-                        ★
-                      </span>
-                    ))
-                  ) : (
-                    <span className="stars-empty">Sin valoración</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <article className="review-body">{review.text}</article>
-
-          {review.significado?.length > 0 && (
-            <div className="review-block">
-              <h3>Significado</h3>
-              <div className="tag-list">
-                {review.significado.map((tag) => (
-                  <span className="tag tag-chip" key={tag}>{tag}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {review.momento && (
-            <div className="review-block momento">
-              <h3>Momento</h3>
-              <p>{review.momento}</p>
-            </div>
-          )}
-
-          {error && <p className="form-error">{error}</p>}
-
-          <div className="review-actions">
-            <Link className="btn btn-secondary" to={albumUrl}>
-              Volver al álbum
+            <Link
+              className="btn btn-primary"
+              to="/inicio"
+            >
+              Volver al inicio
             </Link>
+          </section>
+        )}
 
-            {isOwnerOrAdmin && (
-              <>
-                <Link
-                  className="btn btn-secondary"
-                  to={`/reviews?edit=${review._id}`}
-                >
-                  Editar
-                </Link>
+        {review && (
+          <>
+            <div className="mobile-detail-toolbar">
+              <BackButton
+                fallback={getAlbumUrl(review)}
+              />
 
+              {review.canManage && (
                 <button
                   type="button"
-                  className="btn btn-danger"
-                  onClick={handleDelete}
+                  className="icon-button"
+                  aria-label="Acciones de la reseña"
+                  onClick={() =>
+                    setActionsOpen(true)
+                  }
                 >
-                  Eliminar
+                  <AppIcon name="more" />
                 </button>
-              </>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
+
+            <div className="review-detail-shell">
+              <aside className="review-release-context">
+                <Link
+                  className="review-detail-cover-link"
+                  to={getAlbumUrl(review)}
+                  aria-label={`Ir al lanzamiento ${review.album}`}
+                  title={`Ir a ${review.album}`}
+                >
+                  <img
+                    src={
+                      review.image ||
+                      "/images/cover-placeholder.png"
+                    }
+                    alt={`Portada de ${review.album}`}
+                    onError={fallbackCover}
+                  />
+                </Link>
+
+                <div className="review-side-actions">
+                  {!review.canManage && (
+                    <button
+                      className={`btn btn-secondary ${
+                        review.resonatedByMe
+                          ? "active"
+                          : ""
+                      }`}
+                      type="button"
+                      onClick={resonate}
+                    >
+                      <>
+                        <AppIcon
+                          name="heart"
+                          size={17}
+                          fill={
+                            review.resonatedByMe
+                              ? "currentColor"
+                              : "none"
+                          }
+                        />
+                        <span>
+                          {review.resonatedByMe
+                            ? "Resonó"
+                            : "Resonar con esta reseña"}
+                        </span>
+                      </>
+                    </button>
+                  )}
+
+                  {review.canManage && (
+                    <>
+                      <Link
+                        className="btn btn-primary btn-review"
+                        to={`/resenas?editar=${review._id}`}
+                      >
+                        Editar reseña
+                      </Link>
+
+                      <button
+                        className="btn btn-danger"
+                        type="button"
+                        onClick={() =>
+                          setConfirmDelete(true)
+                        }
+                      >
+                        Eliminar reseña
+                      </button>
+                    </>
+                  )}
+                </div>
+              </aside>
+
+              <div className="review-detail-content">
+                <article className="story-detail">
+                  <header className="page-heading-copy">
+                    <PageTrail
+                      items={[
+                        {
+                          label: "Inicio",
+                          to: "/inicio",
+                        },
+                        {
+                          label: "Lanzamientos",
+                          to: "/buscar?categoria=lanzamientos",
+                        },
+                        {
+                          label: review.artist,
+                          to: getArtistUrl({
+                            id: review.artistId,
+                            name: review.artist,
+                          }),
+                        },
+                        {
+                          label: review.album,
+                          to: getAlbumUrl(review),
+                        },
+                        {
+                          label: `Reseña de ${
+                            review.author?.nombre ||
+                            review.username ||
+                            "Usuario"
+                          }`,
+                        },
+                      ]}
+                    />
+
+                    <Link
+                      className="review-mobile-cover"
+                      to={getAlbumUrl(review)}
+                      aria-label={`Ir al lanzamiento ${review.album}`}
+                    >
+                      <img
+                        src={
+                          review.image ||
+                          "/images/cover-placeholder.png"
+                        }
+                        alt={`Portada de ${review.album}`}
+                        onError={fallbackCover}
+                      />
+                    </Link>
+
+                    <h1>{review.album}</h1>
+
+                    <p className="story-author-heading author-with-avatar">
+                      <Avatar
+                        user={
+                          review.author || {
+                            nombre: review.username,
+                          }
+                        }
+                        size={30}
+                      />
+
+                      <span className="story-author-copy">
+                        Reseña de{" "}
+                        {review.author?.handle ? (
+                          <Link
+                            to={`/usuario/${review.author.handle}`}
+                          >
+                            {review.author.nombre}
+                          </Link>
+                        ) : (
+                          review.username || "Usuario"
+                        )}
+                      </span>
+                    </p>
+
+                    <Link
+                      className="artist-link"
+                      to={getArtistUrl({
+                        id: review.artistId,
+                        name: review.artist,
+                      })}
+                    >
+                      {review.artist}
+                    </Link>
+
+                    <ReviewRating
+                      value={review.rating}
+                      showEmpty={review.canManage}
+                    />
+                  </header>
+
+                  {review.canManage && (
+                    <div className="review-mobile-owner-actions">
+                      <Link
+                        className="btn btn-primary btn-review"
+                        to={`/resenas?editar=${review._id}`}
+                      >
+                        <AppIcon
+                          name="pencil"
+                          size={17}
+                        />
+                        Editar reseña
+                      </Link>
+                    </div>
+                  )}
+
+                  <section className="review-content-section review-copy-section">
+                    <h2>Reseña</h2>
+
+                    <p className="story-detail-text">
+                      {review.text}
+                    </p>
+                  </section>
+
+                  {review.significado?.length > 0 && (
+                    <section className="review-content-section review-meaning-section">
+                      <h2>Significado</h2>
+
+                      <div className="tag-list">
+                        {review.significado.map(
+                          (tag) => (
+                            <span
+                              className="tag"
+                              key={tag}
+                            >
+                              {tag}
+                            </span>
+                          ),
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  {review.momento && (
+                    <section className="review-content-section review-moment-section">
+                      <h2>Momento</h2>
+                      <p>{review.momento}</p>
+                    </section>
+                  )}
+                </article>
+
+                <Comments
+                  loadComments={loadComments}
+                  addComment={addComment}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </main>
 
       <Footer />
 
-      <div className={`toast-global ${toastVisible ? "show" : ""}`}>
-        {params.get("saved") === "updated"
-          ? "Reseña actualizada"
-          : "Reseña publicada"}
-      </div>
+      <ActionSheet
+        open={actionsOpen}
+        title="Acciones de la reseña"
+        onClose={() => setActionsOpen(false)}
+        items={[
+          {
+            label: "Editar reseña",
+            icon: "pencil",
+            variant: "primary",
+            hidden: !review?.canManage,
+            to: review
+              ? `/resenas?editar=${review._id}`
+              : "/resenas",
+          },
+          {
+            label: "Ir al lanzamiento",
+            icon: "music",
+            to: review
+              ? getAlbumUrl(review)
+              : "/buscar",
+          },
+          {
+            label: "Eliminar reseña",
+            icon: "trash",
+            danger: true,
+            hidden: !review?.canManage,
+            onSelect: () =>
+              setConfirmDelete(true),
+          },
+        ]}
+      />
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="¿Eliminar esta reseña?"
+        description="La reseña, sus comentarios y resonancias se eliminarán de forma permanente."
+        confirmLabel="Eliminar reseña"
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={remove}
+        busy={deleting}
+      />
     </div>
   );
 }
-
-export default ReviewDetail;
