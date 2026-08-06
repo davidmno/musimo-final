@@ -22,33 +22,72 @@ import AppIcon from "../components/app-icon";
 export default function ListDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [list, setList] = useState(null);
-  const [status, setStatus] = useState({ type: "", text: "" });
+  const [status, setStatus] = useState({
+    type: "",
+    text: "",
+  });
   const [loading, setLoading] = useState(true);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDelete, setConfirmDelete] =
+    useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] =
+    useState(false);
+
   useEffect(() => {
     let active = true;
+
     getList(id)
-      .then((data) => active && setList(data))
-      .catch(
-        (error) => active && setStatus({ type: "error", text: error.message }),
-      )
-      .finally(() => active && setLoading(false));
+      .then((data) => {
+        if (active) {
+          setList(data);
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setStatus({
+            type: "error",
+            text: error.message,
+          });
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
     return () => {
       active = false;
     };
   }, [id]);
+
   useEffect(() => {
-    if (list) setBreadcrumbContext({ list });
+    if (list) {
+      setBreadcrumbContext({ list });
+    }
   }, [list]);
-  const loadComments = useCallback(() => getListComments(id), [id]);
-  const addComment = useCallback((text) => commentList(id, text), [id]);
+
+  const loadComments = useCallback(
+    () => getListComments(id),
+    [id],
+  );
+
+  const addComment = useCallback(
+    (text) => commentList(id, text),
+    [id],
+  );
+
   async function resonate() {
     try {
       const result = await resonateList(id);
-      setList((current) => ({ ...current, resonatedByMe: result.resonated }));
+
+      setList((current) => ({
+        ...current,
+        resonatedByMe: result.resonated,
+      }));
+
       setStatus({
         type: "success",
         text: result.resonated
@@ -56,86 +95,156 @@ export default function ListDetail() {
           : "Quitaste tu resonancia.",
       });
     } catch (error) {
-      setStatus({ type: "error", text: error.message });
-    }
-  }
-  async function share() {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setStatus({ type: "success", text: "Enlace copiado." });
-    } catch {
       setStatus({
         type: "error",
-        text: "No se pudo copiar. Usá la dirección del navegador.",
+        text: error.message,
       });
     }
   }
+
+  async function share() {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: list?.title || "Lista de musimo",
+          text:
+            list?.description ||
+            "Mirá esta lista en musimo.",
+          url: window.location.href,
+        });
+
+        setStatus({
+          type: "success",
+          text: "Lista compartida.",
+        });
+
+        return;
+      }
+
+      await navigator.clipboard.writeText(
+        window.location.href,
+      );
+
+      setStatus({
+        type: "success",
+        text: "Enlace copiado.",
+      });
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return;
+      }
+
+      setStatus({
+        type: "error",
+        text:
+          "No se pudo compartir. Usá la dirección del navegador.",
+      });
+    }
+  }
+
   async function remove() {
     setDeleting(true);
+
     try {
       await deleteList(id);
       navigate("/perfil", { replace: true });
     } catch (error) {
-      setStatus({ type: "error", text: error.message });
+      setStatus({
+        type: "error",
+        text: error.message,
+      });
     } finally {
       setDeleting(false);
       setConfirmDelete(false);
     }
   }
+
   return (
     <div className="app-body">
       <Navbar />
+
       <main className="app-page app-page-wide list-detail-page">
-        {loading && <p className="loading-text">Cargando lista…</p>}
-        <StatusMessage type={status.type}>{status.text}</StatusMessage>
+        {loading && (
+          <p className="loading-text">
+            Cargando lista…
+          </p>
+        )}
+
+        <StatusMessage type={status.type}>
+          {status.text}
+        </StatusMessage>
+
         {list && (
           <>
             <div className="mobile-detail-toolbar">
               <BackButton fallback="/comunidad" />
+
               {list.canManage && (
                 <button
                   type="button"
                   className="icon-button"
                   aria-label="Acciones de la lista"
-                  onClick={() => setActionsOpen(true)}
+                  onClick={() =>
+                    setActionsOpen(true)
+                  }
                 >
                   <AppIcon name="more" />
                 </button>
               )}
             </div>
+
             <header className="list-detail-header page-heading-copy">
               <PageTrail
                 items={[
-                  { label: "Inicio", to: "/inicio" },
-                  { label: "Comunidad", to: "/comunidad" },
-                  { label: list.title },
+                  {
+                    label: "Inicio",
+                    to: "/inicio",
+                  },
+                  {
+                    label: "Comunidad",
+                    to: "/comunidad",
+                  },
+                  {
+                    label: list.title,
+                  },
                 ]}
               />
+
               <h1>{list.title}</h1>
+
               <p className="detail-kicker">
-                Lista {list.visibility === "private" ? "privada" : "pública"}
+                Lista{" "}
+                {list.visibility === "private"
+                  ? "privada"
+                  : "pública"}
               </p>
+
               <p>{list.description}</p>
+
               <div className="list-detail-meta">
                 <p className="author-with-avatar">
                   <Avatar
                     user={
                       list.author || {
                         nombre: list.ownerName,
-                        avatarImage: list.ownerAvatarImage,
+                        avatarImage:
+                          list.ownerAvatarImage,
                       }
                     }
                     size={30}
                   />{" "}
                   por{" "}
                   {list.ownerHandle ? (
-                    <Link to={`/usuario/${list.ownerHandle}`}>
+                    <Link
+                      to={`/usuario/${list.ownerHandle}`}
+                    >
                       @{list.ownerHandle}
                     </Link>
                   ) : (
                     list.ownerName
                   )}
                 </p>
+
                 <span>
                   {list.albums?.length || 0}{" "}
                   {(list.albums?.length || 0) === 1
@@ -143,25 +252,55 @@ export default function ListDetail() {
                     : "lanzamientos"}
                 </span>
               </div>
+
               <div
-                className={`story-actions ${list.canManage ? "list-owner-actions" : ""}`}
+                className={`story-actions list-detail-actions ${
+                  list.canManage
+                    ? "list-owner-actions"
+                    : ""
+                }`}
               >
                 {!list.canManage && (
                   <button
-                    className={`btn btn-secondary ${list.resonatedByMe ? "active" : ""}`}
+                    className={`btn btn-secondary list-resonate-button ${
+                      list.resonatedByMe
+                        ? "active"
+                        : ""
+                    }`}
                     type="button"
                     onClick={resonate}
                   >
-                    {list.resonatedByMe ? "✓ Resonó" : "Resonar"}
+                    <AppIcon
+                      name="heart"
+                      size={17}
+                      fill={
+                        list.resonatedByMe
+                          ? "currentColor"
+                          : "none"
+                      }
+                    />
+
+                    <span>
+                      {list.resonatedByMe
+                        ? "Resonó"
+                        : "Resonar con esta lista"}
+                    </span>
                   </button>
                 )}
+
                 <button
-                  className="btn btn-secondary desktop-list-share"
+                  className="btn btn-secondary list-share-button"
                   type="button"
                   onClick={share}
                 >
-                  Compartir
+                  <AppIcon
+                    name="share"
+                    size={17}
+                  />
+
+                  <span>Compartir</span>
                 </button>
+
                 {list.canManage && (
                   <>
                     <Link
@@ -170,10 +309,13 @@ export default function ListDetail() {
                     >
                       Editar
                     </Link>
+
                     <button
                       className="btn btn-danger"
                       type="button"
-                      onClick={() => setConfirmDelete(true)}
+                      onClick={() =>
+                        setConfirmDelete(true)
+                      }
                     >
                       Eliminar
                     </button>
@@ -181,26 +323,45 @@ export default function ListDetail() {
                 )}
               </div>
             </header>
+
             <ol className="list-detail-items list-detail-grid">
-              {(list.albums || []).map((release, index) => (
-                <li key={`${release.catalogId || release.album}-${index}`}>
-                  <span className="list-position">{index + 1}.</span>
-                  <ReleaseCard release={release} />
-                </li>
-              ))}
+              {(list.albums || []).map(
+                (release, index) => (
+                  <li
+                    key={`${
+                      release.catalogId ||
+                      release.album
+                    }-${index}`}
+                  >
+                    <span className="list-position">
+                      {index + 1}.
+                    </span>
+
+                    <ReleaseCard release={release} />
+                  </li>
+                ),
+              )}
             </ol>
+
             {!list.albums?.length && (
               <p className="empty-state">
-                Esta lista todavía no tiene lanzamientos.
+                Esta lista todavía no tiene
+                lanzamientos.
               </p>
             )}
+
             {list.visibility !== "private" && (
-              <Comments loadComments={loadComments} addComment={addComment} />
+              <Comments
+                loadComments={loadComments}
+                addComment={addComment}
+              />
             )}
           </>
         )}
       </main>
+
       <Footer />
+
       <ActionSheet
         open={actionsOpen}
         title="Acciones de la lista"
@@ -209,22 +370,28 @@ export default function ListDetail() {
           {
             label: "Editar lista",
             icon: "pencil",
-            to: list ? `/listas?editar=${list._id}` : "/listas",
+            to: list
+              ? `/listas?editar=${list._id}`
+              : "/listas",
           },
           {
             label: "Eliminar lista",
             icon: "trash",
             danger: true,
-            onSelect: () => setConfirmDelete(true),
+            onSelect: () =>
+              setConfirmDelete(true),
           },
         ]}
       />
+
       <ConfirmDialog
         open={confirmDelete}
         title="¿Eliminar esta lista?"
         description="La lista, sus comentarios y resonancias se eliminarán de forma permanente."
         confirmLabel="Eliminar lista"
-        onCancel={() => setConfirmDelete(false)}
+        onCancel={() =>
+          setConfirmDelete(false)
+        }
         onConfirm={remove}
         busy={deleting}
       />
