@@ -68,7 +68,7 @@ export function searchCatalog(query, options = {}) {
     ...(expandArtist ? { expandArtist: "1", releaseLimit: String(releaseLimit) } : {}),
   });
   return cachedRequest(
-    `search:v3:${clean}:${limit}:${expandArtist ? 1 : 0}:${releaseLimit}`,
+    `search:v4:${clean}:${limit}:${expandArtist ? 1 : 0}:${releaseLimit}`
     () => apiRequest(`/catalog/search?${params}`, { signal: options.signal }),
     30 * MINUTE,
     { share: !options.signal },
