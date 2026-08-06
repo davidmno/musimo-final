@@ -402,27 +402,31 @@ function image(event) {
     };
 
     preview.onload = () => {
-      const maxSize = 512;
-      const scale = Math.min(
-        maxSize / preview.width,
-        maxSize / preview.height,
-        1,
+      const outputSize = 512;
+
+      /*
+       * Recorte cuadrado centrado:
+       * toma el lado más corto de la foto.
+       */
+      const cropSize = Math.min(
+        preview.naturalWidth,
+        preview.naturalHeight,
       );
 
-      const width = Math.max(
-        1,
-        Math.round(preview.width * scale),
+      const sourceX = Math.max(
+        0,
+        (preview.naturalWidth - cropSize) / 2,
       );
 
-      const height = Math.max(
-        1,
-        Math.round(preview.height * scale),
+      const sourceY = Math.max(
+        0,
+        (preview.naturalHeight - cropSize) / 2,
       );
 
       const canvas = document.createElement("canvas");
 
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = outputSize;
+      canvas.height = outputSize;
 
       const context = canvas.getContext("2d");
 
@@ -437,10 +441,14 @@ function image(event) {
 
       context.drawImage(
         preview,
+        sourceX,
+        sourceY,
+        cropSize,
+        cropSize,
         0,
         0,
-        width,
-        height,
+        outputSize,
+        outputSize,
       );
 
       const avatarImage = canvas.toDataURL(
@@ -457,6 +465,8 @@ function image(event) {
         type: "success",
         text: "Foto lista. Guardá los cambios para aplicarla.",
       });
+
+      event.target.value = "";
     };
 
     preview.src = reader.result;
