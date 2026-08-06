@@ -407,17 +407,43 @@ export default function ReviewDetail() {
 
                   {review.canManage && (
                     <div className="review-mobile-owner-actions">
-                      <Link
-                        className="btn btn-primary btn-review"
-                        to={`/resenas?editar=${review._id}`}
-                      >
-                        <AppIcon
-                          name="pencil"
-                          size={17}
-                        />
-                        Editar reseña
-                      </Link>
-                    </div>
+  {review.canManage ? (
+    <Link
+      className="btn btn-primary btn-review"
+      to={`/resenas?editar=${review._id}`}
+    >
+      <AppIcon
+        name="pencil"
+        size={17}
+      />
+      Editar reseña
+    </Link>
+  ) : (
+    <button
+      className={`btn btn-secondary review-mobile-interaction ${
+        review.resonatedByMe ? "active" : ""
+      }`}
+      type="button"
+      onClick={resonate}
+    >
+      <AppIcon
+        name="heart"
+        size={17}
+        fill={
+          review.resonatedByMe
+            ? "currentColor"
+            : "none"
+        }
+      />
+
+      <span>
+        {review.resonatedByMe
+          ? "Resonó"
+          : "Resonar con esta reseña"}
+      </span>
+    </button>
+  )}
+</div>
                   )}
 
                   <section className="review-content-section review-copy-section">
