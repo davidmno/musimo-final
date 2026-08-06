@@ -272,22 +272,21 @@ export default function ReviewDetail() {
                       type="button"
                       onClick={resonate}
                     >
-                      <>
-                        <AppIcon
-                          name="heart"
-                          size={17}
-                          fill={
-                            review.resonatedByMe
-                              ? "currentColor"
-                              : "none"
-                          }
-                        />
-                        <span>
-                          {review.resonatedByMe
-                            ? "Resonó"
-                            : "Resonar con esta reseña"}
-                        </span>
-                      </>
+                      <AppIcon
+                        name="heart"
+                        size={17}
+                        fill={
+                          review.resonatedByMe
+                            ? "currentColor"
+                            : "none"
+                        }
+                      />
+
+                      <span>
+                        {review.resonatedByMe
+                          ? "Resonó"
+                          : "Resonar con esta reseña"}
+                      </span>
                     </button>
                   )}
 
@@ -405,46 +404,46 @@ export default function ReviewDetail() {
                     />
                   </header>
 
-                  {review.canManage && (
-                    <div className="review-mobile-owner-actions">
-  {review.canManage ? (
-    <Link
-      className="btn btn-primary btn-review"
-      to={`/resenas?editar=${review._id}`}
-    >
-      <AppIcon
-        name="pencil"
-        size={17}
-      />
-      Editar reseña
-    </Link>
-  ) : (
-    <button
-      className={`btn btn-secondary review-mobile-interaction ${
-        review.resonatedByMe ? "active" : ""
-      }`}
-      type="button"
-      onClick={resonate}
-    >
-      <AppIcon
-        name="heart"
-        size={17}
-        fill={
-          review.resonatedByMe
-            ? "currentColor"
-            : "none"
-        }
-      />
+                  <div className="review-mobile-owner-actions">
+                    {review.canManage ? (
+                      <Link
+                        className="btn btn-primary btn-review"
+                        to={`/resenas?editar=${review._id}`}
+                      >
+                        <AppIcon
+                          name="pencil"
+                          size={17}
+                        />
+                        Editar reseña
+                      </Link>
+                    ) : (
+                      <button
+                        className={`btn btn-secondary review-mobile-interaction ${
+                          review.resonatedByMe
+                            ? "active"
+                            : ""
+                        }`}
+                        type="button"
+                        onClick={resonate}
+                      >
+                        <AppIcon
+                          name="heart"
+                          size={17}
+                          fill={
+                            review.resonatedByMe
+                              ? "currentColor"
+                              : "none"
+                          }
+                        />
 
-      <span>
-        {review.resonatedByMe
-          ? "Resonó"
-          : "Resonar con esta reseña"}
-      </span>
-    </button>
-  )}
-</div>
-                  )}
+                        <span>
+                          {review.resonatedByMe
+                            ? "Resonó"
+                            : "Resonar con esta reseña"}
+                        </span>
+                      </button>
+                    )}
+                  </div>
 
                   <section className="review-content-section review-copy-section">
                     <h2>Reseña</h2>
