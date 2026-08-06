@@ -283,7 +283,7 @@ export default function ListDetail() {
                     <span>
                       {list.resonatedByMe
                         ? "Resonó"
-                        : "Resonar con esta lista"}
+                        : "Resonar con lista"}
                     </span>
                   </button>
                 )}
