@@ -469,6 +469,17 @@ function image(event) {
 
   reader.readAsDataURL(file);
 }
+
+  function cancelAccountEditing() {
+    setAccount(accountData(profile));
+    setPassword({
+      currentPassword: "",
+      newPassword: "",
+      repeat: "",
+    });
+    setEditing(false);
+  }
+
   async function saveAccount(event) {
     event.preventDefault();
     if (password.newPassword && password.newPassword !== password.repeat) {
@@ -687,7 +698,7 @@ function image(event) {
     </>}
   </main><Footer />
 
-  {editing && account && <div className="profile-editor-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setEditing(false)}><form className="profile-account-editor" onSubmit={saveAccount}><div className="profile-editor-heading"><div><p className="eyebrow">Tu cuenta</p><h2>Editar perfil</h2></div><button type="button" onClick={() => setEditing(false)} aria-label="Cerrar"><AppIcon name="x" /></button></div>
+  {editing && account && <div className="profile-editor-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && cancelAccountEditing()}><form className="profile-account-editor" onSubmit={saveAccount}><div className="profile-editor-heading"><div><p className="eyebrow">Tu cuenta</p><h2>Editar perfil</h2></div><button type="button" onClick={cancelAccountEditing} aria-label="Cerrar"><AppIcon name="x" /></button></div>
 <div className="profile-photo-editor">
   <span className="profile-photo">
     {account.avatarImage ? (
@@ -706,21 +717,11 @@ function image(event) {
         onChange={image}
       />
     </label>
-
-    <small
-      style={{
-        display: "block",
-        marginTop: "8px",
-        color: "#5d5d5d",
-      }}
-    >
-      La vista previa ya está lista. Guardá los cambios para aplicarla.
-    </small>
-  </div>
+ </div>
 </div>
     <div className="two-columns">
       <label>Nombre<input value={account.nombre} onChange={(event) => setAccount({ ...account, nombre: event.target.value })} required /></label>
-      <label>Nombre de usuario<input value={account.handle} onChange={(event) => setAccount({ ...account, handle: event.target.value.toLowerCase() })} required /></label></div><label>Email<input type="email" value={account.email} onChange={(event) => setAccount({ ...account, email: event.target.value })} required /></label><label>Descripción<textarea value={account.bio} onChange={(event) => setAccount({ ...account, bio: event.target.value })} maxLength="280" /></label><fieldset className="password-editor"><legend>Cambiar contraseña <span>opcional</span></legend>{account.hasPassword !== false && <label>Contraseña actual<input type="password" value={password.currentPassword} onChange={(event) => setPassword({ ...password, currentPassword: event.target.value })} required={Boolean(password.newPassword)} /></label>}<div className="two-columns"><label>Nueva contraseña<input type="password" minLength="8" value={password.newPassword} onChange={(event) => setPassword({ ...password, newPassword: event.target.value })} /></label><label>Repetir contraseña<input type="password" minLength="8" value={password.repeat} onChange={(event) => setPassword({ ...password, repeat: event.target.value })} /></label></div></fieldset><div className="form-actions"><button className="btn btn-tertiary" type="button" onClick={() => setEditing(false)}>Cancelar</button><button className="btn btn-primary" type="submit" disabled={busy}>{busy ? "Guardando…" : "Guardar cambios"}</button></div></form></div>}
+      <label>Nombre de usuario<input value={account.handle} onChange={(event) => setAccount({ ...account, handle: event.target.value.toLowerCase() })} required /></label></div><label>Email<input type="email" value={account.email} onChange={(event) => setAccount({ ...account, email: event.target.value })} required /></label><label>Descripción<textarea value={account.bio} onChange={(event) => setAccount({ ...account, bio: event.target.value })} maxLength="280" /></label><fieldset className="password-editor"><legend>Cambiar contraseña <span>opcional</span></legend>{account.hasPassword !== false && <label>Contraseña actual<input type="password" value={password.currentPassword} onChange={(event) => setPassword({ ...password, currentPassword: event.target.value })} required={Boolean(password.newPassword)} /></label>}<div className="two-columns"><label>Nueva contraseña<input type="password" minLength="8" value={password.newPassword} onChange={(event) => setPassword({ ...password, newPassword: event.target.value })} /></label><label>Repetir contraseña<input type="password" minLength="8" value={password.repeat} onChange={(event) => setPassword({ ...password, repeat: event.target.value })} /></label></div></fieldset><div className="form-actions"><button className="btn btn-tertiary" type="button" onClick={cancelAccountEditing}>Cancelar</button><button className="btn btn-primary" type="submit" disabled={busy}>{busy ? "Guardando…" : "Guardar cambios"}</button></div></form></div>}
 
   <ConfirmDialog open={confirmClear} title="¿Vaciar Por reseñar?" description="Se quitarán todos los lanzamientos guardados en esta sección." confirmLabel="Vaciar lista" onCancel={() => setConfirmClear(false)} onConfirm={clearSaved} />
   </div>;
