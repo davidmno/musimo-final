@@ -153,10 +153,14 @@ export default function Comments({ loadComments, addComment }) {
                   onClick={() => toggleResonance(comment._id)}
                 >
                   <AppIcon
-                    name="heart"
-                    size={16}
-                    fill="currentColor"
-                  />
+  name="heart"
+  size={16}
+  fill={
+    comment.resonatedByMe
+      ? "currentColor"
+      : "none"
+  }
+/>
                   <span>
                     {comment.resonatedByMe
                       ? "Resonó"
