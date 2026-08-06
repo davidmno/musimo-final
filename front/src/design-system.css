@@ -241,7 +241,6 @@ h3 {
 
 /* Navigation */
 .app-nav-wrap {
-  height: var(--nav-height);
   border-bottom: 1px solid var(--border-soft);
   background: rgba(17, 17, 16, .94);
   backdrop-filter: blur(16px);
