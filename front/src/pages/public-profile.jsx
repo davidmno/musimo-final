@@ -365,16 +365,105 @@ export default function PublicProfile() {
       setProfile((current) => ({ ...current, isFollowing: !current.isFollowing, followers: current.followers + (current.isFollowing ? -1 : 1) }));
     } catch (error) { setStatus({ type: "error", text: error.message }); }
   }
+function image(event) {
+  const file = event.target.files?.[0];
 
-  function image(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > 1_000_000) return setStatus({ type: "error", text: "La foto debe pesar menos de 1 MB." });
-    const reader = new FileReader();
-    reader.onload = () => setAccount((current) => ({ ...current, avatarImage: reader.result }));
-    reader.readAsDataURL(file);
+  if (!file) {
+    return;
   }
 
+  if (!file.type.startsWith("image/")) {
+    setStatus({
+      type: "error",
+      text: "Elegí un archivo de imagen válido.",
+    });
+
+    event.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onerror = () => {
+    setStatus({
+      type: "error",
+      text: "No pudimos leer la imagen seleccionada.",
+    });
+  };
+
+  reader.onload = () => {
+    const preview = new Image();
+
+    preview.onerror = () => {
+      setStatus({
+        type: "error",
+        text: "No pudimos procesar la imagen seleccionada.",
+      });
+    };
+
+    preview.onload = () => {
+      const maxSize = 512;
+      const scale = Math.min(
+        maxSize / preview.width,
+        maxSize / preview.height,
+        1,
+      );
+
+      const width = Math.max(
+        1,
+        Math.round(preview.width * scale),
+      );
+
+      const height = Math.max(
+        1,
+        Math.round(preview.height * scale),
+      );
+
+      const canvas = document.createElement("canvas");
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        setStatus({
+          type: "error",
+          text: "No pudimos procesar la imagen.",
+        });
+
+        return;
+      }
+
+      context.drawImage(
+        preview,
+        0,
+        0,
+        width,
+        height,
+      );
+
+      const avatarImage = canvas.toDataURL(
+        "image/jpeg",
+        0.82,
+      );
+
+      setAccount((current) => ({
+        ...current,
+        avatarImage,
+      }));
+
+      setStatus({
+        type: "success",
+        text: "Foto lista. Guardá los cambios para aplicarla.",
+      });
+    };
+
+    preview.src = reader.result;
+  };
+
+  reader.readAsDataURL(file);
+}
   async function saveAccount(event) {
     event.preventDefault();
     if (password.newPassword && password.newPassword !== password.repeat) {
