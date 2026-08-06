@@ -293,22 +293,72 @@ export async function changePassword(userId, currentPassword, newPassword) {
 }
 
 async function sendResetEmail(email, resetUrl) {
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return false;
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
+  const apiKey = process.env.BREVO_API_KEY;
+  const from = process.env.EMAIL_FROM;
+
+  if (!apiKey || !from) {
+    console.error("Faltan BREVO_API_KEY o EMAIL_FROM.");
+    return false;
+  }
+
+  const senderMatch = from.match(/^(.*?)\s*<(.+?)>$/);
+
+  const sender = senderMatch
+    ? {
+        name: senderMatch[1].trim() || "musimo",
+        email: senderMatch[2].trim(),
+      }
+    : {
+        name: "musimo",
+        email: from.trim(),
+      };
+
+  const response = await fetch(
+    "https://api.brevo.com/v3/smtp/email",
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "api-key": apiKey,
+      },
+      body: JSON.stringify({
+        sender,
+        to: [{ email }],
+        subject: "Recuperá tu contraseña de musimo",
+        htmlContent: `
+          <p>Recibimos un pedido para cambiar tu contraseña.</p>
+          <p>
+            <a href="${resetUrl}">
+              Elegir una contraseña nueva
+            </a>
+          </p>
+          <p>El enlace vence en una hora.</p>
+        `,
+        textContent:
+          `Recibimos un pedido para cambiar tu contraseña.\n\n` +
+          `Elegí una contraseña nueva: ${resetUrl}\n\n` +
+          `El enlace vence en una hora.`,
+      }),
+      signal: AbortSignal.timeout(10_000),
     },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM,
-      to: [email],
-      subject: "Recuperá tu contraseña de musimo",
-      html: `<p>Recibimos un pedido para cambiar tu contraseña.</p><p><a href="${resetUrl}">Elegir una contraseña nueva</a></p><p>El enlace vence en una hora.</p>`,
-    }),
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!response.ok) throw new HttpError(502, "No se pudo enviar el email de recuperación");
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+
+    console.error(
+      "Brevo no pudo enviar el email:",
+      response.status,
+      error,
+    );
+
+    throw new HttpError(
+      502,
+      "No se pudo enviar el email de recuperación",
+    );
+  }
+
   return true;
 }
 
