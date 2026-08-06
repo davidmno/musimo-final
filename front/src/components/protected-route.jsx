@@ -1,14 +1,8 @@
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/auth-context";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/use-auth";
 
-function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children }) {
   const { token } = useAuth();
-
-  if (!token) {
-    return <Navigate to="/login" />;
-  }
-
-  return children;
+  const location = useLocation();
+  return token ? children : <Navigate to="/iniciar-sesion" replace state={{ from: `${location.pathname}${location.search}${location.hash}` }} />;
 }
-
-export default ProtectedRoute;

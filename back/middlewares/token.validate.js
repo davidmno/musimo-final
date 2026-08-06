@@ -1,36 +1,39 @@
 import { validarToken } from "../services/token.services.js";
-import { getUserById } from "../services/usuarios.services.js";
+import { getAuthUserById } from "../services/usuarios.services.js";
+
+async function resolveUser(req) {
+  const auth = req.headers.authorization || "";
+  const [scheme, token] = auth.split(" ");
+  if (scheme !== "Bearer" || !token) return null;
+
+  const payload = validarToken(token);
+  const user = await getAuthUserById(payload._id);
+  if (!user) return null;
+
+  return {
+    _id: String(user._id),
+    nombre: user.nombre,
+    handle: user.handle,
+    email: user.email,
+    rol: user.rol || "user",
+  };
+}
 
 export async function validateToken(req, res, next) {
   try {
-    const auth = req.headers.authorization;
-
-    if (!auth) {
-      return res.status(401).json({ message: "Token requerido" });
-    }
-
-    const [bearer, token] = auth.split(" ");
-
-    if (bearer !== "Bearer" || !token) {
-      return res.status(401).json({ message: "Formato de token inválido" });
-    }
-
-    const tokenData = validarToken(token);
-    const currentUser = await getUserById(tokenData._id);
-
-    if (!currentUser) {
-      return res.status(401).json({ message: "El usuario ya no existe" });
-    }
-
-    req.usuario = {
-      _id: String(currentUser._id),
-      nombre: currentUser.nombre,
-      email: currentUser.email,
-      rol: currentUser.rol,
-    };
-
+    req.usuario = await resolveUser(req);
+    if (!req.usuario) return res.status(401).json({ message: "Iniciá sesión para continuar" });
     next();
   } catch {
-    return res.status(401).json({ message: "Token inválido" });
+    res.status(401).json({ message: "La sesión venció. Volvé a iniciar sesión." });
   }
+}
+
+export async function optionalToken(req, res, next) {
+  try {
+    req.usuario = await resolveUser(req);
+  } catch {
+    req.usuario = null;
+  }
+  next();
 }

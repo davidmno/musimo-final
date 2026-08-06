@@ -1,95 +1,94 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import StatusMessage from "../components/status-message";
+import { useAuth } from "../context/use-auth";
 import { registrarUsuario } from "../services/usuarios.service";
-import { registerSchema } from "../schemas/usuarios.schema";
 
-function Register() {
+export default function Register() {
   const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    nombre: "",
-    email: "",
-    password: "",
-  });
-
+  const { login } = useAuth();
+  const [form, setForm] = useState({ nombre: "", email: "", password: "" });
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  function handleChange(e) {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  }
+  const finish = useCallback(
+    (user) => {
+      login(user);
+      navigate("/inicio", { replace: true });
+    },
+    [login, navigate],
+  );
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function submit(event) {
+    event.preventDefault();
+    setBusy(true);
     setError("");
 
     try {
-      const data = await registerSchema.validate(form, {
-        abortEarly: false,
-        stripUnknown: true,
-      });
-
-      await registrarUsuario(data);
-      navigate("/login");
-    } catch (error) {
-      if (error.name === "ValidationError") {
-        setError(error.errors[0]);
-        return;
-      }
-
-      setError("No se pudo crear la cuenta");
+      finish(await registrarUsuario(form));
+    } catch (loadError) {
+      setError(loadError.message || "No se pudo crear la cuenta.");
+    } finally {
+      setBusy(false);
     }
+  }
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
   }
 
   return (
     <main className="auth-page">
-      <section className="auth-card">
-        <img src="/images/logo.png" alt="Musimo" className="auth-logo" />
+      <section className="auth-card" aria-labelledby="register-title">
+        <Link to="/" aria-label="Volver a la presentación de musimo">
+          <img src="/images/logo.png" alt="musimo" className="auth-logo" />
+        </Link>
+        <p className="eyebrow">Tu bitácora empieza acá</p>
+        <h1 id="register-title">Crear cuenta</h1>
+        <StatusMessage type="error">{error}</StatusMessage>
 
-        <h1>Crear cuenta</h1>
-
-        <form onSubmit={handleSubmit}>
-          <label>Nombre</label>
-          <input
-            type="text"
-            name="nombre"
-            value={form.nombre}
-            onChange={handleChange}
-            required
-          />
-
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-
-          <label>Contraseña</label>
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
-
-          {error && <p className="form-error">{error}</p>}
-
-          <button className="btn btn-primary" type="submit">
-            Crear cuenta
+        <form onSubmit={submit} aria-busy={busy}>
+          <label>
+            Nombre
+            <input
+              value={form.nombre}
+              onChange={(event) => updateField("nombre", event.target.value)}
+              autoComplete="name"
+              required
+              minLength="2"
+            />
+          </label>
+          <label>
+            Email
+            <input
+              type="email"
+              value={form.email}
+              onChange={(event) => updateField("email", event.target.value)}
+              autoComplete="email"
+              inputMode="email"
+              required
+            />
+          </label>
+          <label>
+            Contraseña
+            <input
+              type="password"
+              value={form.password}
+              onChange={(event) => updateField("password", event.target.value)}
+              autoComplete="new-password"
+              required
+              minLength="8"
+              aria-describedby="register-password-help"
+            />
+            <small id="register-password-help">Mínimo 8 caracteres.</small>
+          </label>
+          <button className="btn btn-primary" type="submit" disabled={busy} aria-busy={busy}>
+            {busy ? "Creando…" : "Crear cuenta"}
           </button>
-          <p className="auth-switch">
-            ¿Ya tenés cuenta? <Link to="/login">Iniciar sesión</Link>
-          </p>
         </form>
+
+        <p className="auth-switch">¿Ya tenés cuenta? <Link to="/iniciar-sesion">Iniciar sesión</Link></p>
       </section>
     </main>
   );
 }
-
-export default Register;

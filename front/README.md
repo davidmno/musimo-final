@@ -1,22 +1,14 @@
-# Musimo Frontend
+# Frontend de musimo
 
-Frontend desarrollado con React, Vite, React Router, Context API, hooks y Yup.
-
-## Comandos
+React 19, React Router y Vite. La guía completa está en el [`README.md`](../README.md) de la raíz.
 
 ```bash
-npm install
+cp .env.example .env.local
+npm ci
+npm run lint
 npm run dev
 npm run build
-npm run lint
+npm run preview
 ```
 
-## Variable de entorno
-
-```env
-VITE_API_URL=http://localhost:3333/api
-```
-
-En producción, configurar `VITE_API_URL` con la URL pública del backend.
-
-La documentación completa se encuentra en el `README.md` de la raíz del proyecto.
+La única variable propia del frontend es `VITE_API_URL`.

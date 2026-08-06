@@ -1,274 +1,301 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
 import Navbar from "../components/navbar";
-import { getToReviewList } from "../services/to-review.service";
-import { getReviews } from "../services/reviews.service";
-import { getLists } from "../services/lists.service";
-import { getRecentMusicReleases } from "../services/musicbrainz.service";
 import Footer from "../components/footer";
-import { getAlbumUrl } from "../services/album-link.service";
+import {
+  Avatar,
+  ListCard,
+  ReleaseCard,
+  ReviewCard,
+} from "../components/content-cards";
+import StatusMessage from "../components/status-message";
+import PageHeader from "../components/page-header";
+import { getHomeContent } from "../services/community.service";
+import {
+  getToReviewList,
+  removeFromToReview,
+} from "../services/to-review.service";
+import { followUser, unfollowUser } from "../services/usuarios.service";
+import AppIcon from "../components/app-icon";
 
-const recentReleasesFallback = [
-  {
-    album: "you seem pretty sad for a girl so in love",
-    artist: "Olivia Rodrigo",
-    year: 2026,
-    type: "Álbum",
-    image: "/images/cover-placeholder.png",
-  },
-  {
-    album: "Dirty Blonde",
-    artist: "Bebe Rexha",
-    year: 2026,
-    type: "Álbum",
-    image: "/images/cover-placeholder.png",
-  },
-  {
-    album: "Dinner Party",
-    artist: "Niall Horan",
-    year: 2026,
-    type: "Álbum",
-    image: "/images/cover-placeholder.png",
-  },
-  {
-    album: "BITCH",
-    artist: "Lizzo",
-    year: 2026,
-    type: "Álbum",
-    image: "/images/cover-placeholder.png",
-  },
-  {
-    album: "girls like girls the album",
-    artist: "Hayley Kiyoko",
-    year: 2026,
-    type: "Álbum",
-    image: "/images/cover-placeholder.png",
-  },
-  {
-    album: "Songs for Young Lovers",
-    artist: "Johnny Orlando",
-    year: 2026,
-    type: "Álbum",
-    image: "/images/cover-placeholder.png",
-  },
-];
+const empty = {
+  newReleases: [],
+  generatingStories: [],
+  recentStories: [],
+  discoverLists: [],
+  suggestedUsers: [],
+};
 
+function Section({ title, action, children, className = "" }) {
+  const railRef = useRef(null);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [canAdvance, setCanAdvance] = useState(false);
 
-function HomeSection({ title, children, linkTo }) {
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return undefined;
+    function updateControls() {
+      const remaining = rail.scrollWidth - rail.clientWidth - rail.scrollLeft;
+      setCanGoBack(rail.scrollLeft > 4);
+      setCanAdvance(remaining > 4);
+    }
+    updateControls();
+    rail.addEventListener("scroll", updateControls, { passive: true });
+    const observer = new ResizeObserver(updateControls);
+    observer.observe(rail);
+    window.addEventListener("resize", updateControls);
+    return () => {
+      rail.removeEventListener("scroll", updateControls);
+      observer.disconnect();
+      window.removeEventListener("resize", updateControls);
+    };
+  }, [children]);
+
+  function move(direction) {
+    railRef.current?.scrollBy({
+      left: railRef.current.clientWidth * 0.82 * direction,
+      behavior: "smooth",
+    });
+  }
   return (
-    <section className="home-section">
+    <section className={`home-section carousel-section ${className}`.trim()}>
       <div className="section-header">
-        <div>
-          <h2 className="section-heading">{title}</h2>
-        </div>
-
-        {linkTo && (
-          <Link to={linkTo} className="section-link">
-            Ver todo
-          </Link>
-        )}
+        <h2>{title}</h2>
+        {action}
       </div>
-
-      <div className="carousel">
-        <div className="carousel-track">{children}</div>
+      <div className="carousel-frame">
+        <div className="horizontal-grid" ref={railRef}>
+          {children}
+        </div>
+        {canGoBack && (
+          <button
+            type="button"
+            className="carousel-control carousel-prev"
+            onClick={() => move(-1)}
+            aria-label={`Volver en ${title}`}
+          >
+            <AppIcon name="arrow-left" />
+          </button>
+        )}
+        {canAdvance && (
+          <button
+            type="button"
+            className="carousel-control carousel-next"
+            onClick={() => move(1)}
+            aria-label={`Ver más de ${title}`}
+          >
+            <AppIcon name="arrow-right" />
+          </button>
+        )}
       </div>
     </section>
   );
 }
 
-function ReleaseCard({ release }) {
-  return (
-    <Link to={getAlbumUrl(release)} className="carousel-card release-card">
-      <img src={release.image} alt={release.album} />
-
-      <div className="release-card-body">
-        <h3>{release.album}</h3>
-        <p>{release.artist}</p>
-        <span className="release-meta">
-          {release.year} · {release.type}
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-function ReviewCard({ review }) {
-  return (
-    <Link to={`/review/${review._id}`} className="carousel-card story-card">
-      <p className="story-user">{review.username || "Usuario"}</p>
-      <h3>{review.album}</h3>
-      <p className="story-artist">{review.artist}</p>
-      <p className="story-excerpt">
-        {review.text.slice(0, 100)}
-        {review.text.length > 100 ? "…" : ""}
-      </p>
-    </Link>
-  );
-}
-
-function ListCard({ list }) {
-  const albums = list.albums || [];
-  const covers = albums
-    .map((album) => album.image)
-    .filter(Boolean)
-    .slice(0, 3);
-
-  return (
-    <Link to="/lists" className="carousel-card list-card">
-      <div className="list-stack">
-        {covers.map((cover, index) => (
-          <img key={cover} src={cover} alt="" style={{ "--i": index }} />
-        ))}
-      </div>
-
-      <h3>{list.title}</h3>
-      <p>
-        {albums.length} lanzamientos · {list.ownerName || list.owner || "Comunidad"}
-      </p>
-    </Link>
-  );
-}
-
-function Home() {
+export default function Home() {
+  const [content, setContent] = useState(empty);
   const [toReview, setToReview] = useState([]);
-  const [personalizedReleases, setPersonalizedReleases] = useState([]);
-  const [communityReviews, setCommunityReviews] = useState([]);
-  const [communityLists, setCommunityLists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [followingBusy, setFollowingBusy] = useState(null);
+  const [removingReview, setRemovingReview] = useState(null);
 
   useEffect(() => {
-    const currentToReview = getToReviewList();
-
-    setToReview(currentToReview);
-    loadRecentReleases();
-    loadCommunityReviews();
-    loadCommunityLists();
-
-    function handleStorage() {
-      const currentToReview = getToReviewList();
-
-      setToReview(currentToReview);
-      loadRecentReleases();
-    }
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("focus", handleStorage);
-
+    let active = true;
+    Promise.all([getHomeContent(), getToReviewList()])
+      .then(([home, saved]) => {
+        if (active) {
+          setContent(home);
+          setToReview(saved);
+        }
+      })
+      .catch((loadError) => {
+        if (active)
+          setError(loadError.message || "No se pudo cargar el inicio.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("focus", handleStorage);
+      active = false;
     };
   }, []);
 
-  async function loadRecentReleases() {
+  async function toggleSuggestedUser(user) {
+    setFollowingBusy(user._id);
     try {
-      const data = await getRecentMusicReleases();
-      setPersonalizedReleases(data.slice(0, 6));
-    } catch {
-      setPersonalizedReleases(recentReleasesFallback.slice(0, 6));
+      if (user.isFollowing) await unfollowUser(user._id);
+      else await followUser(user._id);
+      setContent((current) => ({
+        ...current,
+        suggestedUsers: current.suggestedUsers.map((item) =>
+          String(item._id) === String(user._id)
+            ? { ...item, isFollowing: !item.isFollowing }
+            : item,
+        ),
+      }));
+    } catch (followError) {
+      setError(followError.message || "No se pudo actualizar el seguimiento.");
+    } finally {
+      setFollowingBusy(null);
     }
   }
 
-  async function loadCommunityReviews() {
+  async function removeSavedRelease(release) {
+    const key = release.catalogId || `${release.artist}-${release.album}`;
+    setRemovingReview(key);
     try {
-      const data = await getReviews();
-      setCommunityReviews(data.slice(0, 8));
-    } catch {
-      setCommunityReviews([]);
-    }
-  }
-
-  async function loadCommunityLists() {
-    try {
-      const data = await getLists();
-      setCommunityLists(data.slice(0, 8));
-    } catch {
-      setCommunityLists([]);
+      setToReview(await removeFromToReview(release));
+    } catch (removeError) {
+      setError(removeError.message || "No se pudo quitar el lanzamiento.");
+    } finally {
+      setRemovingReview(null);
     }
   }
 
   return (
     <div className="app-body">
       <Navbar />
-
-      <main className="app-page app-page-wide">
-        <HomeSection title="Por reseñar" linkTo="/profile">
-          {toReview.length > 0 ? (
-            toReview.map((release) => (
-              <ReleaseCard
-                key={`${release.artist}-${release.album}`}
-                release={release}
-              />
-            ))
-          ) : (
-            <div className="empty-state-block carousel-empty">
-              <p className="empty-state">
-                Todavía no guardaste lanzamientos para reseñar.
-              </p>
-
-              <Link className="btn btn-primary" to="/search">
-                Buscar música
-              </Link>
+      <main className="app-page app-page-wide social-page home-page">
+        <PageHeader
+          trail={[{ label: "Inicio" }]}
+          title="Tu próximo momento musical"
+          description="Recorré lanzamientos, historias y listas destacadas."
+          action={
+            <Link className="btn btn-primary" to="/buscar">
+              Buscar música
+            </Link>
+          }
+        />
+        <StatusMessage type="error">{error}</StatusMessage>
+        {loading ? (
+          <p className="loading-text">Preparando descubrimientos…</p>
+        ) : (
+          <div className="home-content-layout">
+            <aside
+              className="home-sidebar"
+              aria-label="Tu actividad y personas sugeridas"
+            >
+              <section className="home-sidebar-section home-section-to-review">
+                <div className="home-sidebar-heading">
+                  <h2>Por reseñar</h2>
+                  <Link to="/perfil">Ver todo</Link>
+                </div>
+                <div className="home-review-queue">
+                  {toReview.slice(0, 4).map((release) => {
+                    const key =
+                      release.catalogId || `${release.artist}-${release.album}`;
+                    return (
+                      <article className="home-review-item" key={key}>
+                        <ReleaseCard compact release={release} />
+                        <button
+                          type="button"
+                          onClick={() => removeSavedRelease(release)}
+                          disabled={removingReview === key}
+                          aria-label={`Quitar ${release.album} de Por reseñar`}
+                          title="Quitar de Por reseñar"
+                        >
+                          <AppIcon name="x" size={16} />
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+                {!toReview.length && (
+                  <Link
+                    className="empty-state-action home-sidebar-cta"
+                    to="/buscar"
+                  >
+                    <span>Todavía no guardaste lanzamientos.</span>
+                    <strong>Buscar para guardar →</strong>
+                  </Link>
+                )}
+              </section>
+              <section className="home-sidebar-section home-section-users">
+                <div className="home-sidebar-heading">
+                  <h2>A quién seguir</h2>
+                </div>
+                <div className="home-follow-suggestions">
+                  {content.suggestedUsers.map((user) => (
+                    <article key={user._id}>
+                      <Link to={`/usuario/${user.handle}`}>
+                        <Avatar user={user} size={38} />
+                        <span>
+                          <strong>{user.nombre}</strong>
+                          <small>@{user.handle}</small>
+                        </span>
+                      </Link>
+                      <button
+                        className={`btn btn-sm ${user.isFollowing ? "btn-secondary active" : "btn-primary"}`}
+                        type="button"
+                        onClick={() => toggleSuggestedUser(user)}
+                        disabled={followingBusy === user._id}
+                      >
+                        {followingBusy === user._id
+                          ? "…"
+                          : user.isFollowing
+                            ? "Siguiendo"
+                            : "Seguir"}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+                {!content.suggestedUsers.length && (
+                  <p className="home-sidebar-empty">
+                    No hay personas nuevas para sugerir.
+                  </p>
+                )}
+              </section>
+            </aside>
+            <div className="home-main-content">
+              <Section
+                className="home-section-new-releases"
+                title="Nuevos lanzamientos"
+                action={
+                  <Link to="/buscar?categoria=lanzamientos">Ver todos</Link>
+                }
+              >
+                {content.newReleases.map((release) => (
+                  <ReleaseCard
+                    key={release.catalogId}
+                    release={release}
+                    recentDate
+                  />
+                ))}
+                {!content.newReleases.length && (
+                  <p className="empty-state">
+                    El catálogo está actualizándose. Probá la búsqueda mientras
+                    tanto.
+                  </p>
+                )}
+              </Section>
+              <Section
+                className="home-section-reviews"
+                title="Reseñas de la comunidad"
+                action={<Link to="/comunidad?tipo=resenas">Ver más</Link>}
+              >
+                {content.generatingStories.map((review) => (
+                  <ReviewCard key={review._id} review={review} home />
+                ))}
+                {!content.generatingStories.length && (
+                  <p className="empty-state">
+                    Las primeras historias de la comunidad aparecerán acá.
+                  </p>
+                )}
+              </Section>
+              <Section className="home-section-lists" title="Listas para descubrir" action={<Link to="/comunidad?tipo=listas">Ver más</Link>}>
+                {content.discoverLists.map((list) => (
+                  <ListCard key={list._id} list={list} />
+                ))}
+                {!content.discoverLists.length && (
+                  <p className="empty-state">Todavía no hay listas públicas.</p>
+                )}
+              </Section>
             </div>
-          )}
-        </HomeSection>
-
-        <HomeSection title="Lanzamientos recientes" linkTo="/search">
-          {(personalizedReleases.length > 0
-            ? personalizedReleases
-            : recentReleasesFallback.slice(0, 6)
-          )
-            .slice(0, 6)
-            .map((release) => (
-              <ReleaseCard
-                key={`${release.artist}-${release.album}`}
-                release={release}
-              />
-            ))}
-        </HomeSection>
-
-        <HomeSection title="Últimas reseñas" linkTo="/profile">
-          {communityReviews.length > 0 ? (
-            communityReviews.map((review) => (
-              <ReviewCard
-                key={review._id}
-                review={review}
-              />
-            ))
-          ) : (
-            <div className="empty-state-block carousel-empty">
-              <p className="empty-state">
-                Todavía no hay reseñas publicadas.
-              </p>
-
-              <Link className="btn btn-primary" to="/search">
-                Buscar música
-              </Link>
-            </div>
-          )}
-        </HomeSection>
-
-        <HomeSection title="Listas de la comunidad" linkTo="/lists">
-          {communityLists.length > 0 ? (
-            communityLists.map((list) => (
-              <ListCard key={list._id} list={list} />
-            ))
-          ) : (
-            <div className="empty-state-block carousel-empty">
-              <p className="empty-state">
-                Todavía no hay listas publicadas.
-              </p>
-
-              <Link className="btn btn-primary" to="/lists">
-                Crear lista
-              </Link>
-            </div>
-          )}
-        </HomeSection>
+          </div>
+        )}
       </main>
-
       <Footer />
     </div>
   );
 }
-
-export default Home;

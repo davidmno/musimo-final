@@ -1,88 +1,90 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import StatusMessage from "../components/status-message";
+import { useAuth } from "../context/use-auth";
 import { loginUsuario } from "../services/usuarios.service";
-import { useAuth } from "../context/auth-context";
-import { loginSchema } from "../schemas/usuarios.schema";
 
-function Login() {
+const SAVED_LOGIN_EMAIL = "musimo-login-email";
+
+export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
-
-  const [form, setForm] = useState({
-    email: "",
+  const [form, setForm] = useState(() => ({
+    email: window.localStorage.getItem(SAVED_LOGIN_EMAIL) || "",
     password: "",
-  });
-
+  }));
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  function handleChange(e) {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  }
+  const finish = useCallback(
+    (user) => {
+      login(user);
+      navigate(location.state?.from || "/inicio", { replace: true });
+    },
+    [location.state, login, navigate],
+  );
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function submit(event) {
+    event.preventDefault();
+    window.localStorage.setItem(SAVED_LOGIN_EMAIL, form.email.trim());
+    setBusy(true);
     setError("");
 
     try {
-      const data = await loginSchema.validate(form, {
-        abortEarly: false,
-        stripUnknown: true,
-      });
-
-      const usuario = await loginUsuario(data);
-      login(usuario);
-      navigate("/home");
-    } catch (error) {
-      if (error.name === "ValidationError") {
-        setError(error.errors[0]);
-        return;
-      }
-
-      setError("Email o contraseña incorrectos");
+      finish(await loginUsuario(form));
+    } catch (loadError) {
+      setError(loadError.message || "Email o contraseña incorrectos.");
+    } finally {
+      setBusy(false);
     }
+  }
+
+  function updateEmail(email) {
+    setForm((current) => ({ ...current, email }));
+    window.localStorage.setItem(SAVED_LOGIN_EMAIL, email);
   }
 
   return (
     <main className="auth-page">
-      <section className="auth-card">
-        <img src="/images/logo.png" alt="Musimo" className="auth-logo" />
+      <section className="auth-card" aria-labelledby="login-title">
+        <Link to="/" aria-label="Volver a la presentación de musimo">
+          <img src="/images/logo.png" alt="musimo" className="auth-logo" />
+        </Link>
+        <p className="eyebrow">Volvé a tus historias</p>
+        <h1 id="login-title">Iniciar sesión</h1>
+        <StatusMessage type="error">{error}</StatusMessage>
 
-        <h1>Iniciar sesión</h1>
-
-        <form onSubmit={handleSubmit}>
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-
-          <label>Contraseña</label>
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
-
-          {error && <p className="form-error">{error}</p>}
-
-          <button className="btn btn-primary" type="submit">
-            Entrar
+        <form onSubmit={submit} aria-busy={busy}>
+          <label>
+            Email
+            <input
+              type="email"
+              value={form.email}
+              onChange={(event) => updateEmail(event.target.value)}
+              autoComplete="email"
+              inputMode="email"
+              required
+            />
+          </label>
+          <label>
+            Contraseña
+            <input
+              type="password"
+              value={form.password}
+              onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          <Link className="forgot-link" to="/recuperar-contrasena">Olvidé mi contraseña</Link>
+          <button className="btn btn-primary" type="submit" disabled={busy} aria-busy={busy}>
+            {busy ? "Entrando…" : "Entrar"}
           </button>
-          <p className="auth-switch">
-            ¿Todavía no tenés cuenta? <Link to="/register">Crear cuenta</Link>
-          </p>
         </form>
+
+        <p className="auth-switch">¿Todavía no tenés cuenta? <Link to="/registro">Crear cuenta</Link></p>
       </section>
     </main>
   );
 }
-
-export default Login;

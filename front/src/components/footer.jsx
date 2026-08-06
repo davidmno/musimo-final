@@ -5,21 +5,21 @@ function Footer() {
     <footer className="app-footer">
       <div className="app-footer-inner">
         <div className="footer-brand">
-          <img src="/images/logo.png" alt="Musimo" />
+          <img src="/images/logo.png" alt="musimo" />
           <p>Música · Significado · Momentos</p>
         </div>
 
         <div className="footer-links">
           <div className="footer-col">
             <h4>Explorar</h4>
-            <Link to="/search">Buscar</Link>
-            <Link to="/reviews">Reseñas</Link>
-            <Link to="/lists">Listas</Link>
+            <Link to="/buscar">Buscar</Link>
+            <Link to="/resenas">Reseñas</Link>
+            <Link to="/listas">Listas</Link>
           </div>
 
           <div className="footer-col">
-            <h4>Musimo</h4>
-            <Link to="/">Sobre Musimo</Link>
+            <h4>musimo</h4>
+            <Link to="/">Sobre musimo</Link>
             <Link to="/">Contacto</Link>
             <Link to="/">Privacidad</Link>
             <Link to="/">Instagram</Link>
@@ -27,7 +27,7 @@ function Footer() {
         </div>
       </div>
 
-      <p className="footer-copy">© Musimo 2026</p>
+      <p className="footer-copy">© musimo 2026</p>
     </footer>
   );
 }
