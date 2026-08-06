@@ -55,6 +55,7 @@ const CACHE_POLICY = {
   artist: { freshTtl: 7 * DAY, staleTtl: 90 * DAY },
   artistReleases: { freshTtl: 6 * 60 * 60 * 1000, staleTtl: 30 * DAY },
   newReleases: { freshTtl: 2 * 60 * 60 * 1000, staleTtl: 14 * DAY },
+  cover: { freshTtl: 30 * DAY, staleTtl: 180 * DAY },
 };
 const cache = new Map();
 let requestQueue = Promise.resolve();
@@ -273,6 +274,128 @@ function uniqueReleases(items = []) {
     item.catalogId || item.id || `${normalizeText(item.artist)}|${normalizeText(item.album || item.title)}`,
     item,
   ])).values()];
+}
+
+async function releaseGroupHasCover(id) {
+  if (!id) {
+    return false;
+  }
+
+  return persistentCached(
+    `cover-check:v1:${id}`,
+    async () => {
+      const response = await fetch(
+        `${COVER_ART_BASE}/release-group/${encodeURIComponent(
+          id,
+        )}/front-500`,
+        {
+          method: "HEAD",
+          redirect: "manual",
+          headers: {
+            "User-Agent": userAgent(),
+          },
+          signal: AbortSignal.timeout(5_000),
+        },
+      );
+
+      /*
+       * Cover Art Archive responde con una redirección
+       * cuando encontró una portada.
+       */
+      if (
+        response.ok ||
+        (response.status >= 300 &&
+          response.status < 400)
+      ) {
+        return true;
+      }
+
+      /*
+       * Un 404 significa que el lanzamiento existe,
+       * pero no tiene portada seleccionada.
+       */
+      if (response.status === 404) {
+        return false;
+      }
+
+      /*
+       * Los errores temporales no se guardan como
+       * si fueran una portada inexistente.
+       */
+      throw new Error(
+        `No se pudo validar la portada: ${response.status}`,
+      );
+    },
+    CACHE_POLICY.cover,
+  );
+}
+
+async function releaseHasUsableCover(release = {}) {
+  const image = String(release.image || "");
+
+  /*
+   * Las portadas locales incluidas en Musimo
+   * ya son seguras.
+   */
+  if (
+    image.startsWith("/images/") &&
+    !image.includes("cover-placeholder")
+  ) {
+    return true;
+  }
+
+  const catalogId =
+    release.catalogId || release.id;
+
+  if (!catalogId) {
+    return false;
+  }
+
+  try {
+    return await releaseGroupHasCover(catalogId);
+  } catch {
+    return false;
+  }
+}
+
+async function takeReleasesWithCovers(
+  releases = [],
+  limit = 12,
+) {
+  const selected = [];
+  const batchSize = 5;
+
+  /*
+   * Revisamos pequeños grupos en paralelo.
+   * La función se detiene cuando ya reunió
+   * la cantidad necesaria.
+   */
+  for (
+    let index = 0;
+    index < releases.length &&
+    selected.length < limit;
+    index += batchSize
+  ) {
+    const batch = releases.slice(
+      index,
+      index + batchSize,
+    );
+
+    const checked = await Promise.all(
+      batch.map(async (release) => {
+        const hasCover =
+          await releaseHasUsableCover(release);
+
+        return hasCover ? release : null;
+      }),
+    );
+
+    selected.push(
+      ...checked.filter(Boolean),
+    );
+  }
+
+  return selected.slice(0, limit);
 }
 
 function sortReleasesNewestFirst(releases = []) {
@@ -773,14 +896,21 @@ export async function getNewReleases(
     return sortCuratedNewReleases(
       releases,
     ).slice(0, safeLimit);
-  } catch {
-    const fallback =
-      await localNewReleasesFallback(safeLimit);
-
-    return sortCuratedNewReleases(
-      fallback,
-    ).slice(0, safeLimit);
-  }
+    
+    } catch {
+      const fallback =
+        await localNewReleasesFallback(
+          safeLimit * 3,
+        );
+    
+      const orderedFallback =
+        sortCuratedNewReleases(fallback);
+    
+      return takeReleasesWithCovers(
+        orderedFallback,
+        safeLimit,
+      );
+    }
 }
 
 export const catalogInternals = {
