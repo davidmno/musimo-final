@@ -257,15 +257,55 @@ export async function unfollowUser(followerId, targetId) {
 export async function listConnections(userId, type) {
   const db = await getDb();
   const id = idString(userId);
+  const showingFollowers = type === "followers";
+
   const follows = await db
     .collection("follows")
-    .find(type === "followers" ? { targetId: id } : { followerId: id })
+    .find(
+      showingFollowers
+        ? { targetId: id }
+        : { followerId: id },
+    )
+    .sort({
+      createdAt: -1,
+      _id: -1,
+    })
     .toArray();
-  const ids = follows.map((item) =>
-    asObjectId(type === "followers" ? item.followerId : item.targetId),
-  ).filter(Boolean);
-  const users = await db.collection("usuarios").find({ _id: { $in: ids } }).toArray();
-  return users.map((user) => basePublicUser(user));
+
+  const orderedUserIds = follows.map((follow) =>
+    idString(
+      showingFollowers
+        ? follow.followerId
+        : follow.targetId,
+    ),
+  );
+
+  const objectIds = orderedUserIds
+    .map((userIdValue) => asObjectId(userIdValue))
+    .filter(Boolean);
+
+  if (!objectIds.length) {
+    return [];
+  }
+
+  const users = await db
+    .collection("usuarios")
+    .find({
+      _id: { $in: objectIds },
+    })
+    .toArray();
+
+  const usersById = new Map(
+    users.map((user) => [
+      idString(user._id),
+      user,
+    ]),
+  );
+
+  return orderedUserIds
+    .map((orderedId) => usersById.get(orderedId))
+    .filter(Boolean)
+    .map((user) => basePublicUser(user));
 }
 
 export async function listFollowedArtists(userId) {
