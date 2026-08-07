@@ -1,0 +1,13 @@
+/* Ajuste final del detalle de reseña: ancho completo y saltos de línea reales. */
+.story-detail-page .review-detail-content .review-content-section {
+  width: 100%;
+  max-width: none;
+}
+
+.story-detail-page .review-detail-content .review-copy-section .story-detail-text,
+.story-detail-page .review-detail-content .review-moment-section > p {
+  width: 100% !important;
+  max-width: none !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere;
+}
