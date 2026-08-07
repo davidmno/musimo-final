@@ -2041,215 +2041,241 @@ function sortCuratedNewReleases(
   );
 }
 
+/*
+ * Selección editorial utilizada en Inicio.
+ *
+ * Se fijan únicamente artista, título y tipo.
+ * La fecha, portada, identificador y demás datos
+ * continúan obteniéndose de MusicBrainz.
+ */
+const CURATED_HOME_RELEASES = [
+  {
+    key: "love-sensation",
+    title: "Love Sensation",
+    queryArtist: "Madonna",
+    expectedArtists: [
+      "Madonna",
+      "Kylie Minogue",
+    ],
+    releaseType: "Sencillo",
+  },
+  {
+    key: "after-all",
+    title: "After All",
+    queryArtist: "Carly Rae Jepsen",
+    expectedArtists: [
+      "Carly Rae Jepsen",
+    ],
+    releaseType: "Sencillo",
+  },
+  {
+    key: "music-fashion-film",
+    title: "Music, Fashion, Film",
+    queryArtist: "Charli xcx",
+    expectedArtists: [
+      "Charli xcx",
+    ],
+    releaseType: "Álbum",
+  },
+  {
+    key: "crash-out",
+    title: "Crash Out",
+    queryArtist: "Tinashe",
+    expectedArtists: [
+      "Tinashe",
+    ],
+    releaseType: "Sencillo",
+  },
+  {
+    key: "sauna",
+    title: "Sauna",
+    queryArtist: "Jessie Ware",
+    expectedArtists: [
+      "Jessie Ware",
+    ],
+    releaseType: "Sencillo",
+  },
+  {
+    key: "reach-out",
+    title: "Reach Out",
+    queryArtist: "Victoria Monét",
+    expectedArtists: [
+      "Victoria Monét",
+    ],
+    releaseType: "Sencillo",
+  },
+  {
+    key: "therapy-at-the-club",
+    title: "Therapy at the Club",
+    queryArtist: "FLO",
+    expectedArtists: [
+      "FLO",
+    ],
+    releaseType: "Sencillo",
+  },
+  {
+    key: "petal-album",
+    title: "petal",
+    queryArtist: "Ariana Grande",
+    expectedArtists: [
+      "Ariana Grande",
+    ],
+    /*
+     * Es obligatorio que sea el álbum.
+     * El sencillo homónimo queda excluido.
+     */
+    releaseType: "Álbum",
+  },
+];
+
+function matchesCuratedArtist(
+  candidateArtist = "",
+  expectedArtists = [],
+) {
+  const normalizedCandidate =
+    normalizeText(candidateArtist);
+
+  return expectedArtists.every(
+    (artist) =>
+      normalizedCandidate.includes(
+        normalizeText(artist),
+      ),
+  );
+}
+
+function matchesCuratedRelease(
+  release,
+  definition,
+) {
+  if (
+    normalizeText(
+      release.album ||
+        release.title ||
+        "",
+    ) !== normalizeText(definition.title)
+  ) {
+    return false;
+  }
+
+  if (
+    release.releaseType !==
+    definition.releaseType
+  ) {
+    return false;
+  }
+
+  return matchesCuratedArtist(
+    release.artist,
+    definition.expectedArtists,
+  );
+}
+
+async function resolveCuratedHomeRelease(
+  definition,
+) {
+  return persistentCached(
+    `home-curated:v1:${definition.key}`,
+    async () => {
+      const safeTitle = definition.title
+        .replace(/["\\]/g, " ")
+        .trim();
+
+      const safeArtist =
+        definition.queryArtist
+          .replace(/["\\]/g, " ")
+          .trim();
+
+      const query = encodeURIComponent(
+        `releasegroup:"${safeTitle}" AND ` +
+          `artist:"${safeArtist}"`,
+      );
+
+      const response =
+        await queuedMusicBrainzFetch(
+          `/release-group?query=${query}` +
+            `&inc=artist-credits` +
+            `&fmt=json` +
+            `&limit=25`,
+        );
+
+      const candidates = uniqueById(
+        response["release-groups"] || [],
+      )
+        .map(normalizeReleaseGroup)
+        .filter((release) =>
+          matchesCuratedRelease(
+            release,
+            definition,
+          ),
+        )
+        .sort((left, right) => {
+          const scoreDifference =
+            Number(right.score || 0) -
+            Number(left.score || 0);
+
+          if (scoreDifference) {
+            return scoreDifference;
+          }
+
+          return String(
+            right.releaseDate || "",
+          ).localeCompare(
+            String(
+              left.releaseDate || "",
+            ),
+          );
+        });
+
+      const selected = candidates[0];
+
+      if (!selected) {
+        throw new Error(
+          `No se pudo identificar ${definition.title} de ${definition.queryArtist}.`,
+        );
+      }
+
+      return selected;
+    },
+    CACHE_POLICY.newReleases,
+  );
+}
+
 export async function getNewReleases(
-  limit = 12,
-  options = {},
+  limit = 8,
 ) {
   const safeLimit = Math.min(
     Math.max(
-      Number(limit) || 12,
+      Number(limit) || 8,
       1,
     ),
-    24,
+    CURATED_HOME_RELEASES.length,
   );
 
-  const days = Math.min(
-    Math.max(
-      Number(options.days) || 15,
-      1,
+  /*
+   * Cada lanzamiento se resuelve de forma
+   * independiente. Si MusicBrainz falla para
+   * uno de ellos, los demás siguen visibles.
+   */
+  const resolved = await Promise.allSettled(
+    CURATED_HOME_RELEASES.map(
+      resolveCuratedHomeRelease,
     ),
-    365,
   );
 
-  const genre = normalizeText(
-    options.genre || "pop",
-  );
+  const releases = resolved
+    .filter(
+      (result) =>
+        result.status === "fulfilled",
+    )
+    .map((result) => result.value);
 
-  const end = new Date();
-  const start = new Date(end);
-
-  start.setDate(
-    start.getDate() - days,
-  );
-
-  const date = (value) =>
-    value
-      .toISOString()
-      .slice(0, 10);
-
-  const startDate = date(start);
-  const endDate = date(end);
-
-  const dateClause =
-    `firstreleasedate:[` +
-    `${startDate} TO ${endDate}]`;
-
-  const genreClause = genre
-    ? `tag:${genre.replace(
-        /[^a-z0-9-]/g,
-        "",
-      )}`
-    : "";
-
-  const generalQuery =
-    encodeURIComponent(
-      [
-        genreClause,
-        dateClause,
-      ]
-        .filter(Boolean)
-        .join(" AND "),
-    );
-
-  const priorityArtistsClause =
-    PRIORITY_POP_ARTISTS.map(
-      (artist) =>
-        `artistname:"${artist}"`,
-    ).join(" OR ");
-
-  const priorityQuery =
-    encodeURIComponent(
-      `(${priorityArtistsClause}) AND ${dateClause}`,
-    );
-
-  try {
-    const fetchLimit = Math.min(
-      Math.max(
-        safeLimit * 5,
-        60,
-      ),
-      100,
-    );
-
-    const [
-      priorityResult,
-      generalResult,
-    ] = await Promise.allSettled([
-      persistentCached(
-        /*
-         * v5 evita reutilizar el caché anterior,
-         * que podía contener fechas fuera del rango.
-         */
-        `new:v5:priority:${days}:` +
-          `${endDate}:${safeLimit}`,
-        () =>
-          queuedMusicBrainzFetch(
-            `/release-group?query=${priorityQuery}` +
-              `&inc=artist-credits` +
-              `&fmt=json` +
-              `&limit=${fetchLimit}`,
-          ),
-        CACHE_POLICY.newReleases,
-      ),
-
-      persistentCached(
-        `new:v5:${genre || "all"}:` +
-          `${days}:${endDate}:` +
-          `${safeLimit}`,
-        () =>
-          queuedMusicBrainzFetch(
-            `/release-group?query=${generalQuery}` +
-              `&inc=artist-credits` +
-              `&fmt=json` +
-              `&limit=${fetchLimit}`,
-          ),
-        CACHE_POLICY.newReleases,
-      ),
-    ]);
-
-    const priorityGroups =
-      priorityResult.status ===
-      "fulfilled"
-        ? priorityResult.value[
-            "release-groups"
-          ] || []
-        : [];
-
-    const generalGroups =
-      generalResult.status ===
-      "fulfilled"
-        ? generalResult.value[
-            "release-groups"
-          ] || []
-        : [];
-
-    const groups = [
-      ...priorityGroups,
-      ...generalGroups,
-    ];
-
-    if (!groups.length) {
-      throw new Error(
-        "No se encontraron lanzamientos externos.",
-      );
-    }
-
-    /*
-     * Aunque la búsqueda externa ya contiene
-     * un rango, volvemos a validarlo localmente.
-     * De esta manera ningún dato incorrecto
-     * de MusicBrainz puede escapar al filtro.
-     */
-    const releases = uniqueById(groups)
-      .map(normalizeNewRelease)
-      .filter((release) =>
-        isReleaseInsideDateRange(
-          release,
-          startDate,
-          endDate,
-        ),
-      );
-
-    const orderedReleases =
-      sortCuratedNewReleases(
-        releases,
-      );
-
-    const releasesWithCovers =
-      await takeReleasesWithCovers(
-        orderedReleases,
-        safeLimit,
-      );
-
-    if (releasesWithCovers.length) {
-      return releasesWithCovers;
-    }
-
-    throw new Error(
-      "No hay lanzamientos recientes con portada.",
-    );
-  } catch {
-    /*
-     * El fallback también recibe exactamente
-     * el mismo rango. No puede devolver discos
-     * antiguos guardados en reseñas o listas.
-     */
-    const fallback =
-      await localNewReleasesFallback(
-        safeLimit * 3,
-        startDate,
-        endDate,
-      );
-
-    const filteredFallback =
-      fallback.filter((release) =>
-        isReleaseInsideDateRange(
-          release,
-          startDate,
-          endDate,
-        ),
-      );
-
-    const orderedFallback =
-      sortCuratedNewReleases(
-        filteredFallback,
-      );
-
-    return takeReleasesWithCovers(
-      orderedFallback,
-      safeLimit,
-    );
-  }
+  /*
+   * El orden final siempre depende de la fecha
+   * real del catálogo: más reciente primero.
+   */
+  return sortCuratedNewReleases(
+    uniqueReleases(releases),
+  ).slice(0, safeLimit);
 }
 
 export const catalogInternals = {
