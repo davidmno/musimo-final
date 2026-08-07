@@ -147,7 +147,7 @@ export default function ListDetail() {
 
     try {
       await deleteList(id);
-      navigate("/perfil", { replace: true });
+      navigate("/comunidad?tipo=listas", { replace: true });
     } catch (error) {
       setStatus({
         type: "error",
@@ -177,7 +177,7 @@ export default function ListDetail() {
         {list && (
           <>
             <div className="mobile-detail-toolbar">
-              <BackButton fallback="/comunidad" />
+              <BackButton fallback="/comunidad?tipo=listas" forceFallback />
 
               {list.canManage && (
                 <button
@@ -202,7 +202,7 @@ export default function ListDetail() {
                   },
                   {
                     label: "Comunidad",
-                    to: "/comunidad",
+                    to: "/comunidad?tipo=listas",
                   },
                   {
                     label: list.title,
@@ -372,7 +372,7 @@ export default function ListDetail() {
             icon: "pencil",
             to: list
               ? `/listas?editar=${list._id}`
-              : "/listas",
+              : "/comunidad?tipo=listas",
           },
           {
             label: "Eliminar lista",

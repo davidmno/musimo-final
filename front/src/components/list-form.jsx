@@ -5,7 +5,6 @@ import StatusMessage from "./status-message";
 import ConfirmDialog from "./confirm-dialog";
 import PageHeader from "./page-header";
 import AppIcon from "./app-icon";
-import BackButton from "./back-button";
 
 const blank = { title: "", description: "", visibility: "public", albums: [] };
 
@@ -67,7 +66,7 @@ export default function ListForm({ initialList, onSave, onCancel }) {
   return <section className="list-editor-panel creation-editor-panel">
     <StatusMessage type={status.type}>{status.text}</StatusMessage>
     <form onSubmit={submit} className="list-editor-form creation-editor-form">
-      <div className="mobile-editor-toolbar"><BackButton fallback="/perfil" /><strong>{initialList?._id ? "Editar lista" : "Nueva lista"}</strong><span aria-hidden="true" /></div>
+      <div className="mobile-editor-toolbar"><button className="back-button" type="button" onClick={requestCancel}><AppIcon name="arrow-left" size={16} />Volver</button><strong>{initialList?._id ? "Editar lista" : "Nueva lista"}</strong><span aria-hidden="true" /></div>
       <PageHeader trail={[{ label: "Inicio", to: "/inicio" }, { label: "Comunidad", to: "/comunidad" }, { label: initialList?._id ? "Editar lista" : "Nueva lista" }]} title={initialList?._id ? "Editar lista" : "Nueva lista"} description="Reuní y ordená lanzamientos alrededor de una idea." className="creation-editor-heading" action={<div className="form-actions creation-desktop-actions"><button className="btn btn-tertiary" type="button" onClick={requestCancel}>Cancelar</button><button className="btn btn-primary" type="submit" disabled={busy} aria-busy={busy}>{busy ? "Guardando…" : initialList?._id ? "Guardar cambios" : "Publicar lista"}</button></div>} />
       <div className="list-editor-columns creation-editor-columns">
         <aside className="list-editor-fields creation-editor-sidebar"><div className="creation-section-heading"><h2>Detalles</h2><p>Definí el nombre, la descripción y quién puede verla.</p></div><label>Título<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} minLength="3" maxLength="100" placeholder="Mi nueva lista" required /></label><label>Descripción<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} maxLength="1000" placeholder="Contá de qué se trata esta lista" /></label><label>Visibilidad<select value={form.visibility} onChange={(event) => setForm({ ...form, visibility: event.target.value })}><option value="public">Pública</option><option value="private">Privada</option></select><small>{form.visibility === "public" ? "Cualquier persona puede verla." : "Solamente vos podés verla."}</small></label></aside>

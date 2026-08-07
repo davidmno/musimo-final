@@ -14,7 +14,7 @@ function Footer() {
             <h4>Explorar</h4>
             <Link to="/buscar">Buscar</Link>
             <Link to="/resenas">Reseñas</Link>
-            <Link to="/listas">Listas</Link>
+            <Link to="/comunidad?tipo=listas">Listas</Link>
           </div>
 
           <div className="footer-col">

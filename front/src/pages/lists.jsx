@@ -1,55 +1,114 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import Navbar from "../components/navbar";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import Footer from "../components/footer";
 import ListForm from "../components/list-form";
-import { ListCard } from "../components/content-cards";
+import Navbar from "../components/navbar";
 import StatusMessage from "../components/status-message";
-import ConfirmDialog from "../components/confirm-dialog";
-import PageHeader from "../components/page-header";
-import { createList, deleteList, getLists, updateList } from "../services/lists.service";
+import {
+  createList,
+  getList,
+  updateList,
+} from "../services/lists.service";
+
+const COMMUNITY_LISTS_URL = "/comunidad?tipo=listas";
 
 export default function Lists() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [lists, setLists] = useState([]);
-  const [editing, setEditing] = useState(null);
-  const [editor, setEditor] = useState(params.get("nueva") === "1");
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState({ type: "", text: "" });
-  const [pendingDelete, setPendingDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const editId = params.get("editar");
+  const isCreating = params.get("nueva") === "1";
+  const isEditorRoute = isCreating || Boolean(editId);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await getLists(); setLists(data);
-      const editId = params.get("editar");
-      if (editId) { const target = data.find((item) => String(item._id) === editId); if (target?.canManage) { setEditing(target); setEditor(true); } }
-    } catch (error) { setStatus({ type: "error", text: error.message }); }
-    finally { setLoading(false); }
-  }, [params]);
-  useEffect(() => { load(); }, [load]);
+  const [editing, setEditing] = useState(null);
+  const [loading, setLoading] = useState(Boolean(editId));
+  const [status, setStatus] = useState({ type: "", text: "" });
+
+  useEffect(() => {
+    if (!editId) {
+      setEditing(null);
+      setLoading(false);
+      setStatus({ type: "", text: "" });
+      return undefined;
+    }
+
+    let active = true;
+    setLoading(true);
+    setStatus({ type: "", text: "" });
+
+    getList(editId)
+      .then((list) => {
+        if (!active) return;
+
+        if (!list?.canManage) {
+          throw new Error("No tenés permiso para editar esta lista.");
+        }
+
+        setEditing(list);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setStatus({
+          type: "error",
+          text: error.message || "No se pudo cargar la lista.",
+        });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [editId]);
+
+  if (!isEditorRoute) {
+    return <Navigate to={COMMUNITY_LISTS_URL} replace />;
+  }
 
   async function save(data) {
-    if (editing) await updateList(editing._id, data); else await createList(data);
-    setEditor(false); setEditing(null); navigate("/listas", { replace: true });
-    setStatus({ type: "success", text: editing ? "Lista actualizada." : "Lista creada." });
-    await load();
+    const savedList = editId
+      ? await updateList(editId, data)
+      : await createList(data);
+
+    const savedId = savedList?._id || editId;
+
+    if (!savedId) {
+      throw new Error("La lista se guardó, pero no se pudo abrir su detalle.");
+    }
+
+    navigate(`/lista/${savedId}`, { replace: true });
   }
 
-  async function remove(list) {
-    setDeleting(true);
-    try { await deleteList(list._id); setLists((current) => current.filter((item) => item._id !== list._id)); setStatus({ type: "success", text: "Lista eliminada." }); }
-    catch (error) { setStatus({ type: "error", text: error.message }); }
-    finally { setDeleting(false); setPendingDelete(null); }
+  function cancel() {
+    navigate(editId ? `/lista/${editId}` : COMMUNITY_LISTS_URL, {
+      replace: true,
+    });
   }
 
-  return <div className="app-body"><Navbar /><main className="app-page app-page-wide">
-    {editor ? <ListForm initialList={editing} onSave={save} onCancel={() => { setEditor(false); setEditing(null); navigate("/listas", { replace: true }); }} /> : <>
-      <PageHeader trail={[{ label: "Inicio", to: "/inicio" }, { label: "Listas" }]} title="Listas para compartir y descubrir" description="Ordená álbumes y sencillos alrededor de una idea, un recuerdo o una forma de escuchar." action={<button className="btn btn-primary" type="button" onClick={() => { setEditor(true); navigate("/listas?nueva=1", { replace: true }); }}>Crear lista</button>} />
-      <StatusMessage type={status.type}>{status.text}</StatusMessage>
-      {loading ? <p className="loading-text">Cargando listas…</p> : <div className="lists-manage-grid">{lists.map((list) => <article key={list._id}><ListCard list={list} />{list.canManage && <div className="card-actions"><button className="text-button" type="button" onClick={() => { setEditing(list); setEditor(true); navigate(`/listas?editar=${list._id}`, { replace: true }); }}>Editar</button><button className="text-button danger" type="button" onClick={() => setPendingDelete(list)}>Eliminar</button></div>}</article>)}</div>}
-      {!loading && !lists.length && <p className="empty-state">Todavía no hay listas públicas. <Link to="/listas?nueva=1">Creá la primera.</Link></p>}
-    </>}
-  </main><Footer /><ConfirmDialog open={Boolean(pendingDelete)} title={`¿Eliminar “${pendingDelete?.title || "esta lista"}”?`} description="Esta acción no se puede deshacer y también eliminará sus comentarios." confirmLabel="Eliminar lista" onCancel={() => setPendingDelete(null)} onConfirm={() => remove(pendingDelete)} busy={deleting} /></div>;
+  return (
+    <div className="app-body">
+      <Navbar />
+      <main className="app-page app-page-wide">
+        {loading && <p className="loading-text">Cargando lista…</p>}
+
+        {!loading && status.text && (
+          <section className="list-editor-panel creation-editor-panel">
+            <StatusMessage type={status.type}>{status.text}</StatusMessage>
+            <p className="empty-state">
+              <Link to={COMMUNITY_LISTS_URL}>Volver a Comunidad</Link>
+            </p>
+          </section>
+        )}
+
+        {!loading && !status.text && (isCreating || editing) && (
+          <ListForm
+            initialList={editing}
+            onSave={save}
+            onCancel={cancel}
+          />
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
 }

@@ -121,7 +121,7 @@ export default function Router() {
     <Route path="/artist/:id/:slug?" element={<LegacyRedirect to={({ id, slug }) => `/artista/id/${id}${slug ? `/${slug}` : ""}`} />} />
     <Route path="/reviews" element={<LegacyRedirect to="/resenas" />} />
     <Route path="/review/:id" element={<LegacyRedirect to={({ id }) => `/resena/${id}`} />} />
-    <Route path="/lists" element={<LegacyRedirect to="/listas" />} />
+    <Route path="/lists" element={<LegacyRedirect to="/comunidad?tipo=listas" />} />
     <Route path="/list/:id" element={<LegacyRedirect to={({ id }) => `/lista/${id}`} />} />
     <Route path="/profile" element={<LegacyRedirect to="/perfil" />} />
     <Route path="/u/:handle" element={<LegacyRedirect to={({ handle }) => `/usuario/${handle}`} />} />
