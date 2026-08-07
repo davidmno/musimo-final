@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import StatusMessage from "../components/status-message";
 import { useAuth } from "../context/use-auth";
 import { loginUsuario } from "../services/usuarios.service";
@@ -8,7 +8,6 @@ const SAVED_LOGIN_EMAIL = "musimo-login-email";
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
   const [form, setForm] = useState(() => ({
     email: window.localStorage.getItem(SAVED_LOGIN_EMAIL) || "",
@@ -20,9 +19,9 @@ export default function Login() {
   const finish = useCallback(
     (user) => {
       login(user);
-      navigate(location.state?.from || "/inicio", { replace: true });
+      navigate("/inicio", { replace: true });
     },
-    [location.state, login, navigate],
+    [login, navigate],
   );
 
   async function submit(event) {
