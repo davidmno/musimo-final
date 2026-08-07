@@ -26,6 +26,8 @@ const empty = {
   suggestedUsers: [],
 };
 
+const contextualBackState = { contextualBack: true };
+
 function Section({ title, action, children, className = "" }) {
   const railRef = useRef(null);
   const [canGoBack, setCanGoBack] = useState(false);
@@ -162,7 +164,7 @@ export default function Home() {
           title="Tu próximo momento musical"
           description="Recorré lanzamientos, historias y listas destacadas."
           action={
-            <Link className="btn btn-primary" to="/buscar">
+            <Link className="btn btn-primary" to="/buscar" state={contextualBackState}>
               Buscar música
             </Link>
           }
@@ -179,7 +181,7 @@ export default function Home() {
               <section className="home-sidebar-section home-section-to-review">
                 <div className="home-sidebar-heading">
                   <h2>Por reseñar</h2>
-                  <Link to="/perfil">Ver todo</Link>
+                  <Link to="/perfil" state={contextualBackState}>Ver todo</Link>
                 </div>
                 <div className="home-review-queue">
                   {toReview.slice(0, 4).map((release) => {
@@ -205,6 +207,7 @@ export default function Home() {
                   <Link
                     className="empty-state-action home-sidebar-cta"
                     to="/buscar"
+                    state={contextualBackState}
                   >
                     <span>Todavía no guardaste lanzamientos.</span>
                     <strong>Buscar para guardar →</strong>
@@ -252,7 +255,7 @@ export default function Home() {
                 className="home-section-new-releases"
                 title="Nuevos lanzamientos"
                 action={
-                  <Link to="/buscar?categoria=lanzamientos">Buscar más</Link>
+                  <Link to="/buscar?categoria=lanzamientos" state={contextualBackState}>Buscar más</Link>
                 }
               >
                 {content.newReleases.map((release) => (
@@ -272,7 +275,7 @@ export default function Home() {
               <Section
                 className="home-section-reviews"
                 title="Reseñas de la comunidad"
-                action={<Link to="/comunidad?tipo=resenas">Ver más</Link>}
+                action={<Link to="/comunidad?tipo=resenas" state={contextualBackState}>Ver más</Link>}
               >
                 {content.recentStories.map((review) => (
                   <ReviewCard key={review._id} review={review} home />
@@ -283,7 +286,11 @@ export default function Home() {
                   </p>
                 )}
               </Section>
-              <Section className="home-section-lists" title="Listas para descubrir" action={<Link to="/comunidad?tipo=listas">Ver más</Link>}>
+              <Section
+                className="home-section-lists"
+                title="Listas para descubrir"
+                action={<Link to="/comunidad?tipo=listas" state={contextualBackState}>Ver más</Link>}
+              >
                 {content.discoverLists.map((list) => (
                   <ListCard key={list._id} list={list} />
                 ))}
