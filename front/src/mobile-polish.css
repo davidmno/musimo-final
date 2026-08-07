@@ -3468,3 +3468,28 @@
     padding-bottom: 0 !important;
   }
 }
+
+/* =========================================================
+   RESEÑA DESKTOP — eliminar en color secundario
+   ========================================================= */
+
+@media (min-width: 48.0625rem) {
+  .review-editor-page
+    .creation-desktop-actions
+    .btn.danger {
+    color: var(--secondary) !important;
+    border-color: var(--secondary) !important;
+    background: transparent !important;
+  }
+
+  .review-editor-page
+    .creation-desktop-actions
+    .btn.danger:hover,
+  .review-editor-page
+    .creation-desktop-actions
+    .btn.danger:focus-visible {
+    color: var(--secondary-hover) !important;
+    border-color: var(--secondary-hover) !important;
+    background: transparent !important;
+  }
+}
