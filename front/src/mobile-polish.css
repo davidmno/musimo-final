@@ -3142,3 +3142,57 @@
     gap: 18px !important;
   }
 }
+
+/* =========================================================
+   INICIO — alineación definitiva de carriles y gaps
+   ========================================================= */
+
+/* MOBILE */
+@media (max-width: 48rem) {
+  /*
+   * Nuevos lanzamientos y Listas para descubrir:
+   * el primer elemento arranca exactamente en el mismo eje
+   * que el título de la sección.
+   */
+  .home-page
+    .home-section-new-releases
+    .horizontal-grid,
+  .home-page
+    .home-section-lists
+    .horizontal-grid {
+    margin-inline: 0 !important;
+    padding-inline-start: 0 !important;
+    scroll-padding-inline-start: 0 !important;
+  }
+
+  .home-page
+    .home-section-new-releases
+    .horizontal-grid
+    > :first-child,
+  .home-page
+    .home-section-lists
+    .horizontal-grid
+    > :first-child {
+    margin-inline-start: 0 !important;
+  }
+}
+
+/* DESKTOP */
+@media (min-width: 48.0625rem) {
+  /*
+   * Mismo ritmo horizontal entre las cards:
+   * Por reseñar y Nuevos lanzamientos mantienen
+   * tamaños distintos, pero comparten separación.
+   */
+  .home-page .home-review-queue {
+    gap: 16px !important;
+    column-gap: 16px !important;
+  }
+
+  .home-page
+    .home-section-new-releases
+    .horizontal-grid {
+    gap: 16px !important;
+    column-gap: 16px !important;
+  }
+}
