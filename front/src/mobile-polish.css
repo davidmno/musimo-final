@@ -3280,3 +3280,16 @@
     column-gap: 24px !important;
   }
 }
+
+/* =========================================================
+   INICIO MOBILE — acciones de sección con tamaño uniforme
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  .home-page .section-header > a,
+  .home-page .section-header > button {
+    font-size: .76rem !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+  }
+}
