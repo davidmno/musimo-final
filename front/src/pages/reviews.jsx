@@ -21,6 +21,7 @@ import {
 import { createArtistSlug } from "../services/artist-link.service";
 import AppIcon from "../components/app-icon";
 import useUnsavedChangesGuard from "../hooks/use-unsaved-changes-guard";
+import { canGoBackInApp } from "../services/navigation.service";
 
 const initialForm = { catalogId: null, artistId: null, artist: "", album: "", image: "", releaseType: "Álbum", releaseDate: null, year: null, rating: 0, text: "", significado: "", momento: "", momentoVisibility: "public" };
 
@@ -54,18 +55,25 @@ export default function Reviews() {
   const [deletePending, setDeletePending] = useState(false);
   const [status, setStatus] = useState({ type: "", text: "" });
 
-  const hasUnsavedChanges =
-    JSON.stringify(form) !== JSON.stringify(baseline);
+  const hasUnsavedChanges = JSON.stringify(form) !== JSON.stringify(baseline);
 
   const {
     navigationPending,
     cancelNavigation,
     confirmNavigation,
-  } = useUnsavedChangesGuard(
-    hasUnsavedChanges && !saving,
-  );
-  const { album: breadcrumbAlbum, artist: breadcrumbArtist, artistId: breadcrumbArtistId, catalogId: breadcrumbCatalogId } = form;
-  const reviewTrail = [{ label: "Inicio", to: "/inicio" }, { label: "Lanzamientos", to: "/buscar?categoria=lanzamientos" }];
+  } = useUnsavedChangesGuard(hasUnsavedChanges && !saving);
+
+  const {
+    album: breadcrumbAlbum,
+    artist: breadcrumbArtist,
+    artistId: breadcrumbArtistId,
+    catalogId: breadcrumbCatalogId,
+  } = form;
+
+  const reviewTrail = [
+    { label: "Inicio", to: "/inicio" },
+    { label: "Lanzamientos", to: "/buscar?categoria=lanzamientos" },
+  ];
   if (form.artist) reviewTrail.push({ label: form.artist, to: `/artista/${createArtistSlug(form.artist)}` });
   if (form.album) reviewTrail.push({ label: form.album, to: `/lanzamiento/${createAlbumSlug(form.artist, form.album)}` });
   reviewTrail.push({ label: editId ? "Editar reseña" : "Nueva reseña" });
@@ -91,20 +99,63 @@ export default function Reviews() {
         setForm(loaded);
         setBaseline(loaded);
       })
-      .catch((error) => { if (active) setStatus({ type: "error", text: error.message || "No se pudo cargar el lanzamiento." }); })
-      .finally(() => { if (active) setLoadingRelease(false); });
-    return () => { active = false; };
+      .catch((error) => {
+        if (active) setStatus({ type: "error", text: error.message || "No se pudo cargar el lanzamiento." });
+      })
+      .finally(() => {
+        if (active) setLoadingRelease(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [editId, initialRelease, releaseId]);
 
   useEffect(() => {
-    if (breadcrumbAlbum && breadcrumbArtist) setBreadcrumbContext({ release: { album: breadcrumbAlbum, artist: breadcrumbArtist, artistId: breadcrumbArtistId, catalogId: breadcrumbCatalogId } });
+    if (breadcrumbAlbum && breadcrumbArtist) {
+      setBreadcrumbContext({
+        release: {
+          album: breadcrumbAlbum,
+          artist: breadcrumbArtist,
+          artistId: breadcrumbArtistId,
+          catalogId: breadcrumbCatalogId,
+        },
+      });
+    }
   }, [breadcrumbAlbum, breadcrumbArtist, breadcrumbArtistId, breadcrumbCatalogId]);
+
+  function leaveEditor() {
+    if (canGoBackInApp()) {
+      navigate(-1);
+      return;
+    }
+
+    if (editId) {
+      navigate(`/resena/${editId}`, { replace: true });
+      return;
+    }
+
+    navigate(
+      form.album && form.artist
+        ? getAlbumUrl({
+            catalogId: form.catalogId,
+            artistId: form.artistId,
+            artist: form.artist,
+            album: form.album,
+            image: form.image,
+            releaseType: form.releaseType,
+            releaseDate: form.releaseDate,
+            year: form.year,
+          })
+        : "/buscar?categoria=lanzamientos",
+      { replace: true },
+    );
+  }
 
   function requestCancel() {
     if (hasUnsavedChanges) {
       setCancelPending(true);
     } else {
-      navigate(-1);
+      leaveEditor();
     }
   }
 
@@ -134,9 +185,7 @@ export default function Reviews() {
     } catch (error) {
       setStatus({
         type: "error",
-        text:
-          error.message ||
-          "No se pudo eliminar la reseña.",
+        text: error.message || "No se pudo eliminar la reseña.",
       });
     } finally {
       setSaving(false);
@@ -145,15 +194,40 @@ export default function Reviews() {
 
   async function submit(event) {
     event.preventDefault();
-    if (!form.album || !form.artist) return setStatus({ type: "error", text: "Primero elegí un lanzamiento." });
+    if (!form.album || !form.artist) {
+      return setStatus({ type: "error", text: "Primero elegí un lanzamiento." });
+    }
+
     setSaving(true);
     setStatus({ type: "", text: "" });
-    const payload = { ...form, significado: String(form.significado).split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 8) };
+    const payload = {
+      ...form,
+      significado: String(form.significado)
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 8),
+    };
+
     try {
-      const saved = editId ? await updateReview(editId, payload) : await createReview(payload);
-      navigate(`/resena/${saved._id}?guardada=${editId ? "actualizada" : "creada"}`);
-    } catch (error) { setStatus({ type: "error", text: error.message || "No se pudo guardar la reseña." }); }
-    finally { setSaving(false); }
+      const saved = editId
+        ? await updateReview(editId, payload)
+        : await createReview(payload);
+
+      if (editId && canGoBackInApp()) {
+        navigate(-1);
+        return;
+      }
+
+      navigate(
+        `/resena/${saved._id}?guardada=${editId ? "actualizada" : "creada"}`,
+        { replace: true },
+      );
+    } catch (error) {
+      setStatus({ type: "error", text: error.message || "No se pudo guardar la reseña." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!editId && !initialRelease && !releaseId) return <Navigate to="/buscar" replace />;
@@ -175,75 +249,165 @@ export default function Reviews() {
                 <AppIcon name="arrow-left" size={16} />
                 Volver
               </button>
-              <strong>
-                {editId ? "Editar reseña" : "Nueva reseña"}
-              </strong>
+              <strong>{editId ? "Editar reseña" : "Nueva reseña"}</strong>
               <span aria-hidden="true" />
             </div>
-            <PageHeader trail={reviewTrail} title={editId ? "Editar reseña" : "Nueva reseña"} description="Valorá el lanzamiento y dejá registrada tu experiencia." className="creation-editor-heading" action={
-  <div className="form-actions creation-desktop-actions">
-    <button
-      className="btn btn-tertiary"
-      type="button"
-      onClick={requestCancel}
-      disabled={saving}
-    >
-      Cancelar
-    </button>
+            <PageHeader
+              trail={reviewTrail}
+              title={editId ? "Editar reseña" : "Nueva reseña"}
+              description="Valorá el lanzamiento y dejá registrada tu experiencia."
+              className="creation-editor-heading"
+              action={
+                <div className="form-actions creation-desktop-actions">
+                  <button
+                    className="btn btn-tertiary"
+                    type="button"
+                    onClick={requestCancel}
+                    disabled={saving}
+                  >
+                    Cancelar
+                  </button>
 
-    {editId && (
-      <button
-        className="btn btn-tertiary danger"
-        type="button"
-        onClick={() => setDeletePending(true)}
-        disabled={saving}
-      >
-        Eliminar reseña
-      </button>
-    )}
+                  {editId && (
+                    <button
+                      className="btn btn-tertiary danger"
+                      type="button"
+                      onClick={() => setDeletePending(true)}
+                      disabled={saving}
+                    >
+                      Eliminar reseña
+                    </button>
+                  )}
 
-    <button
-      className="btn btn-primary btn-review"
-      type="submit"
-      disabled={saving}
-      aria-busy={saving}
-    >
-      {saving
-        ? "Guardando…"
-        : editId
-          ? "Guardar cambios"
-          : "Publicar reseña"}
-    </button>
-  </div>
-} />
+                  <button
+                    className="btn btn-primary btn-review"
+                    type="submit"
+                    disabled={saving}
+                    aria-busy={saving}
+                  >
+                    {saving
+                      ? "Guardando…"
+                      : editId
+                        ? "Guardar cambios"
+                        : "Publicar reseña"}
+                  </button>
+                </div>
+              }
+            />
 
             <div className="review-editor-columns creation-editor-columns">
               <aside className="review-editor-context creation-editor-sidebar">
-                <div className="creation-section-heading"><h2>Lanzamiento</h2><p>La reseña quedará vinculada a este lanzamiento.</p></div>
+                <div className="creation-section-heading">
+                  <h2>Lanzamiento</h2>
+                  <p>La reseña quedará vinculada a este lanzamiento.</p>
+                </div>
                 {loadingRelease && <p className="loading-text">Cargando lanzamiento…</p>}
-                {!loadingRelease && form.album && <div className="review-selected-release">
-                  <img src={form.image || "/images/cover-placeholder.png"} alt={`Portada de ${form.album}`} onError={fallbackCover} />
-                  <div><small>{form.releaseType || "Lanzamiento"}{form.year ? ` · ${form.year}` : ""}</small><strong>{form.album}</strong><span>{form.artist}</span></div>
-                </div>}
+                {!loadingRelease && form.album && (
+                  <div className="review-selected-release">
+                    <img
+                      src={form.image || "/images/cover-placeholder.png"}
+                      alt={`Portada de ${form.album}`}
+                      onError={fallbackCover}
+                    />
+                    <div>
+                      <small>
+                        {form.releaseType || "Lanzamiento"}
+                        {form.year ? ` · ${form.year}` : ""}
+                      </small>
+                      <strong>{form.album}</strong>
+                      <span>{form.artist}</span>
+                    </div>
+                  </div>
+                )}
 
-                <div className="rating-field review-page-rating review-optional-field" role="group" aria-labelledby="review-rating-title"><h2 id="review-rating-title">Tu valoración <span>(opcional)</span></h2><p>Solo vos podés verla.</p><div className="review-optional-control">{[1, 2, 3, 4, 5].map((star) => <button key={star} type="button" className={star <= form.rating ? "active" : ""} onClick={() => setForm({ ...form, rating: form.rating === star ? 0 : star })} aria-label={`${star} estrellas`} title={form.rating === star ? "Quitar valoración" : `${star} estrellas`}><AppIcon name="star" size={34} fill={star <= form.rating ? "currentColor" : "none"} /></button>)}</div></div>
+                <div className="rating-field review-page-rating review-optional-field" role="group" aria-labelledby="review-rating-title">
+                  <h2 id="review-rating-title">Tu valoración <span>(opcional)</span></h2>
+                  <p>Solo vos podés verla.</p>
+                  <div className="review-optional-control">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        className={star <= form.rating ? "active" : ""}
+                        onClick={() => setForm({ ...form, rating: form.rating === star ? 0 : star })}
+                        aria-label={`${star} estrellas`}
+                        title={form.rating === star ? "Quitar valoración" : `${star} estrellas`}
+                      >
+                        <AppIcon name="star" size={34} fill={star <= form.rating ? "currentColor" : "none"} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                <div className="review-optional-field"><h2>Tu significado <span>(opcional)</span></h2><p>Agregá hasta ocho etiquetas, separadas por comas.</p><label aria-label="Tu significado"><input value={form.significado} onChange={(event) => setForm({ ...form, significado: event.target.value })} placeholder="Viaje, hogar, descubrimiento" /></label></div>
+                <div className="review-optional-field">
+                  <h2>Tu significado <span>(opcional)</span></h2>
+                  <p>Agregá hasta ocho etiquetas, separadas por comas.</p>
+                  <label aria-label="Tu significado">
+                    <input
+                      value={form.significado}
+                      onChange={(event) => setForm({ ...form, significado: event.target.value })}
+                      placeholder="Viaje, hogar, descubrimiento"
+                    />
+                  </label>
+                </div>
               </aside>
 
               <div className="review-editor-story creation-editor-main">
-                <div className="creation-section-heading"><h2>Tu reseña</h2><p>Contá qué te hizo sentir, pensar o recordar este lanzamiento.</p></div>
+                <div className="creation-section-heading">
+                  <h2>Tu reseña</h2>
+                  <p>Contá qué te hizo sentir, pensar o recordar este lanzamiento.</p>
+                </div>
 
-                <label aria-label="Reseña"><textarea rows="12" value={form.text} onChange={(event) => setForm({ ...form, text: event.target.value })} placeholder="¿Qué te hizo sentir, pensar o recordar?" required minLength="5" maxLength="10000" /><small>{form.text.length}/10.000</small></label>
+                <label aria-label="Reseña">
+                  <textarea
+                    rows="12"
+                    value={form.text}
+                    onChange={(event) => setForm({ ...form, text: event.target.value })}
+                    placeholder="¿Qué te hizo sentir, pensar o recordar?"
+                    required
+                    minLength="5"
+                    maxLength="10000"
+                  />
+                  <small>{form.text.length}/10.000</small>
+                </label>
 
-                <div className="review-moment-block review-optional-field"><div className="moment-heading"><div><h2>Tu momento <span>(opcional)</span></h2><p>Vinculá esta música con una persona, un lugar o una etapa.</p></div><div className="moment-visibility-control"><span>Visibilidad:</span><button className={`moment-visibility-toggle ${form.momentoVisibility === "private" ? "private" : ""}`} type="button" aria-pressed={form.momentoVisibility === "private"} aria-label={form.momentoVisibility === "private" ? "Momento privado. Hacer público" : "Momento público. Hacer privado"} title={form.momentoVisibility === "private" ? "Momento privado" : "Momento público"} onClick={() => setForm({ ...form, momentoVisibility: form.momentoVisibility === "private" ? "public" : "private" })}><AppIcon name={form.momentoVisibility === "private" ? "eye-off" : "eye"} /></button></div></div><label><textarea rows="4" value={form.momento} onChange={(event) => setForm({ ...form, momento: event.target.value })} placeholder="Escribí tu momento" maxLength="2000" /></label></div>
+                <div className="review-moment-block review-optional-field">
+                  <div className="moment-heading">
+                    <div>
+                      <h2>Tu momento <span>(opcional)</span></h2>
+                      <p>Vinculá esta música con una persona, un lugar o una etapa.</p>
+                    </div>
+                    <div className="moment-visibility-control">
+                      <span>Visibilidad:</span>
+                      <button
+                        className={`moment-visibility-toggle ${form.momentoVisibility === "private" ? "private" : ""}`}
+                        type="button"
+                        aria-pressed={form.momentoVisibility === "private"}
+                        aria-label={form.momentoVisibility === "private" ? "Momento privado. Hacer público" : "Momento público. Hacer privado"}
+                        title={form.momentoVisibility === "private" ? "Momento privado" : "Momento público"}
+                        onClick={() => setForm({
+                          ...form,
+                          momentoVisibility: form.momentoVisibility === "private" ? "public" : "private",
+                        })}
+                      >
+                        <AppIcon name={form.momentoVisibility === "private" ? "eye-off" : "eye"} />
+                      </button>
+                    </div>
+                  </div>
+                  <label>
+                    <textarea
+                      rows="4"
+                      value={form.momento}
+                      onChange={(event) => setForm({ ...form, momento: event.target.value })}
+                      placeholder="Escribí tu momento"
+                      maxLength="2000"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
-            <div
-              className={`mobile-sticky-submit ${
-                editId ? "has-delete-action" : ""
-              }`}
-            >
+
+            <div className={`mobile-sticky-submit ${editId ? "has-delete-action" : ""}`}>
               {editId && (
                 <button
                   className="btn btn-tertiary danger"
@@ -272,6 +436,7 @@ export default function Reviews() {
         </section>
       </main>
       <Footer />
+
       <ConfirmDialog
         open={cancelPending}
         title="¿Descartar los cambios?"
@@ -282,7 +447,7 @@ export default function Reviews() {
         }
         confirmLabel="Descartar"
         onCancel={() => setCancelPending(false)}
-        onConfirm={() => navigate(-1)}
+        onConfirm={leaveEditor}
       />
 
       <ConfirmDialog

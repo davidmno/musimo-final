@@ -15,6 +15,7 @@ import {
   resonateList,
 } from "../services/lists.service";
 import { setBreadcrumbContext } from "../services/breadcrumb.service";
+import { canGoBackInApp } from "../services/navigation.service";
 import BackButton from "../components/back-button";
 import ActionSheet from "../components/action-sheet";
 import AppIcon from "../components/app-icon";
@@ -29,11 +30,9 @@ export default function ListDetail() {
     text: "",
   });
   const [loading, setLoading] = useState(true);
-  const [confirmDelete, setConfirmDelete] =
-    useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [actionsOpen, setActionsOpen] =
-    useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -121,9 +120,7 @@ export default function ListDetail() {
         return;
       }
 
-      await navigator.clipboard.writeText(
-        window.location.href,
-      );
+      await navigator.clipboard.writeText(window.location.href);
 
       setStatus({
         type: "success",
@@ -147,7 +144,12 @@ export default function ListDetail() {
 
     try {
       await deleteList(id);
-      navigate("/comunidad?tipo=listas", { replace: true });
+
+      if (canGoBackInApp()) {
+        navigate(-1);
+      } else {
+        navigate("/comunidad?tipo=listas", { replace: true });
+      }
     } catch (error) {
       setStatus({
         type: "error",
@@ -177,16 +179,14 @@ export default function ListDetail() {
         {list && (
           <>
             <div className="mobile-detail-toolbar">
-              <BackButton fallback="/comunidad?tipo=listas" forceFallback />
+              <BackButton fallback="/comunidad?tipo=listas" />
 
               {list.canManage && (
                 <button
                   type="button"
                   className="icon-button"
                   aria-label="Acciones de la lista"
-                  onClick={() =>
-                    setActionsOpen(true)
-                  }
+                  onClick={() => setActionsOpen(true)}
                 >
                   <AppIcon name="more" />
                 </button>
@@ -313,9 +313,7 @@ export default function ListDetail() {
                     <button
                       className="btn btn-danger"
                       type="button"
-                      onClick={() =>
-                        setConfirmDelete(true)
-                      }
+                      onClick={() => setConfirmDelete(true)}
                     >
                       Eliminar
                     </button>
@@ -325,28 +323,22 @@ export default function ListDetail() {
             </header>
 
             <ol className="list-detail-items list-detail-grid">
-              {(list.albums || []).map(
-                (release, index) => (
-                  <li
-                    key={`${
-                      release.catalogId ||
-                      release.album
-                    }-${index}`}
-                  >
-                    <span className="list-position">
-                      {index + 1}.
-                    </span>
+              {(list.albums || []).map((release, index) => (
+                <li
+                  key={`${release.catalogId || release.album}-${index}`}
+                >
+                  <span className="list-position">
+                    {index + 1}.
+                  </span>
 
-                    <ReleaseCard release={release} />
-                  </li>
-                ),
-              )}
+                  <ReleaseCard release={release} />
+                </li>
+              ))}
             </ol>
 
             {!list.albums?.length && (
               <p className="empty-state">
-                Esta lista todavía no tiene
-                lanzamientos.
+                Esta lista todavía no tiene lanzamientos.
               </p>
             )}
 
@@ -378,8 +370,7 @@ export default function ListDetail() {
             label: "Eliminar lista",
             icon: "trash",
             danger: true,
-            onSelect: () =>
-              setConfirmDelete(true),
+            onSelect: () => setConfirmDelete(true),
           },
         ]}
       />
@@ -389,9 +380,7 @@ export default function ListDetail() {
         title="¿Eliminar esta lista?"
         description="La lista, sus comentarios y resonancias se eliminarán de forma permanente."
         confirmLabel="Eliminar lista"
-        onCancel={() =>
-          setConfirmDelete(false)
-        }
+        onCancel={() => setConfirmDelete(false)}
         onConfirm={remove}
         busy={deleting}
       />
