@@ -128,6 +128,16 @@ export function ReviewCard({ review, compact = false, preview = false, showEmpty
 
 export function ListCard({ list, compact = false }) {
   const albums = list.albums || [];
+
+  const author = list.author || {
+    nombre: list.ownerName || "Comunidad",
+    avatar:
+      list.ownerAvatar ||
+      list.ownerName?.slice(0, 1) ||
+      "C",
+    avatarImage: list.ownerAvatarImage || "",
+  };
+
   return (
     <Link className={compact ? "content-row list-row" : "list-tile"} to={`/lista/${list._id}`}>
       <span className="cover-stack" aria-hidden="true">
@@ -138,7 +148,10 @@ export function ListCard({ list, compact = false }) {
       </span>
       <span className="card-copy">
         <strong>{list.title}</strong>
-        <span className="card-author"><Avatar user={list.author || { nombre: list.ownerName }} size={24} />{list.ownerName || list.author?.nombre || "Comunidad"}</span>
+        <span className="card-author">
+          <Avatar user={author} size={24} />
+          {author.nombre || list.ownerName || "Comunidad"}
+        </span>
         <small>{albums.length} lanzamientos</small>
       </span>
       <AppIcon name="chevron-right" size={18} className="card-enter-icon" />

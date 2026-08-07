@@ -476,12 +476,30 @@ function image(event) {
         </aside>
         {profile.isMe && <section className="profile-overview-wide profile-saved-section"><div className="section-header"><h2>Por reseñar</h2>{saved.length > 0 && <button className="text-button" type="button" onClick={() => setTab("saved")}>Ver todos</button>}</div><div className="result-grid profile-saved-grid">{saved.slice(0, 5).map((release) => <article key={release.catalogId || `${release.artist}-${release.album}`}><ReleaseCard release={release} /><button className="profile-card-remove" type="button" aria-label={`Quitar ${release.album}`} onClick={() => removeSaved(release)}><AppIcon name="x" size={16} /></button></article>)}</div>{!saved.length && <Link className="empty-state empty-state-action" to="/buscar"><span>Todavía no guardaste lanzamientos.</span><strong>Buscar para guardar →</strong></Link>}</section>}
         <section className="profile-overview-wide"><div className="section-header"><h2>Reseñas recientes</h2>{profile.reviews.length > 2 && <button className="text-button" type="button" onClick={() => setTab("reviews")}>Ver todas</button>}</div><div className="result-grid profile-review-list">{profile.reviews.slice(0, 2).map((review) => <ReviewCard key={review._id} review={{ ...review, author: profile }} />)}</div>{!profile.reviews.length && (profile.isMe ? <Link className="empty-state empty-state-action" to="/buscar"><span>Todavía no publicaste reseñas.</span><strong>Buscar un lanzamiento para reseñar →</strong></Link> : <p className="empty-state">Todavía no publicó reseñas.</p>)}</section>
-        <section className="profile-overview-wide"><div className="section-header"><h2>Listas recientes</h2>{profile.lists.length > 2 && <button className="text-button" type="button" onClick={() => setTab("lists")}>Ver todas</button>}</div><div className="result-grid profile-list-list">{profile.lists.slice(0, 2).map((list) => <ListCard key={list._id} list={list} />)}</div>{!profile.lists.length && (profile.isMe ? <Link className="empty-state empty-state-action" to="/listas?nueva=1"><span>Todavía no publicaste listas.</span><strong>Crear una lista →</strong></Link> : <p className="empty-state">Todavía no publicó listas.</p>)}</section>
+        <section className="profile-overview-wide"><div className="section-header"><h2>Listas recientes</h2>{profile.lists.length > 2 && <button className="text-button" type="button" onClick={() => setTab("lists")}>Ver todas</button>}</div><div className="result-grid profile-list-list">{profile.lists.slice(0, 2).map((list) => <ListCard
+  key={list._id}
+  list={{
+    ...list,
+    author: profile,
+    ownerName: list.ownerName || profile.nombre,
+  }}
+/>)}</div>{!profile.lists.length && (profile.isMe ? <Link className="empty-state empty-state-action" to="/listas?nueva=1"><span>Todavía no publicaste listas.</span><strong>Crear una lista →</strong></Link> : <p className="empty-state">Todavía no publicó listas.</p>)}</section>
       </div>}
 
       {profile.isMe && tab === "saved" && <section className="profile-tab-panel"><div className="section-header"><h2>Por reseñar</h2>{saved.length > 0 && <button className="text-button danger" type="button" onClick={() => setConfirmClear(true)}>Vaciar</button>}</div><div className="result-grid profile-saved-grid">{saved.map((release) => <article key={release.catalogId || `${release.artist}-${release.album}`}><ReleaseCard release={release} /><button className="profile-card-remove" type="button" aria-label={`Quitar ${release.album}`} onClick={() => removeSaved(release)}><AppIcon name="x" size={16} /></button></article>)}</div>{!saved.length && <Link className="empty-state empty-state-action" to="/buscar"><span>Todavía no guardaste lanzamientos.</span><strong>Buscar para guardar →</strong></Link>}</section>}
       {tab === "reviews" && <section className="profile-tab-panel"><div className="section-header"><h2>{profile.isMe ? "Tus reseñas" : `Reseñas de ${profile.nombre}`}</h2></div><div className="result-grid profile-review-list">{profile.reviews.map((review) => <ReviewCard key={review._id} review={{ ...review, author: profile }} />)}</div>{!profile.reviews.length && (profile.isMe ? <Link className="empty-state empty-state-action" to="/buscar"><span>Todavía no publicaste reseñas.</span><strong>Buscar un lanzamiento para reseñar →</strong></Link> : <p className="empty-state">Todavía no publicó reseñas.</p>)}</section>}
-      {tab === "lists" && <section className="profile-tab-panel"><div className="section-header"><h2>{profile.isMe ? "Tus listas" : `Listas de ${profile.nombre}`}</h2>{profile.isMe ? <Link to="/listas?nueva=1">Crear lista</Link> : <span>{profile.lists.length}</span>}</div><div className="result-grid profile-list-list">{profile.lists.map((list) => <ListCard key={list._id} list={list} />)}</div>{!profile.lists.length && (profile.isMe ? <Link className="empty-state empty-state-action" to="/listas?nueva=1"><span>Todavía no publicaste listas.</span><strong>Crear una lista →</strong></Link> : <p className="empty-state">Todavía no publicó listas.</p>)}</section>}
+      {tab === "lists" && <section className="profile-tab-panel"><div className="section-header"><h2>{profile.isMe ? "Tus listas" : `Listas de ${profile.nombre}`}</h2>{profile.isMe && (
+  <Link to="/listas?nueva=1">
+    Crear lista
+  </Link>
+)}</div><div className="result-grid profile-list-list">{profile.lists.map((list) => <ListCard
+  key={list._id}
+  list={{
+    ...list,
+    author: profile,
+    ownerName: list.ownerName || profile.nombre,
+  }}
+/>)}</div>{!profile.lists.length && (profile.isMe ? <Link className="empty-state empty-state-action" to="/listas?nueva=1"><span>Todavía no publicaste listas.</span><strong>Crear una lista →</strong></Link> : <p className="empty-state">Todavía no publicó listas.</p>)}</section>}
       {tab === "users" && <section className="profile-tab-panel profile-users-panel">
         <div className="profile-users-filter" role="tablist" aria-label="Relaciones del perfil">
           <button type="button" role="tab" aria-selected={connections.type === "following"} className={connections.type === "following" ? "active" : ""} onClick={() => openConnections("following")}>Seguidos <span>{profile.following}</span></button>
