@@ -3056,3 +3056,26 @@
     flex: 0 0 36px;
   }
 }
+
+/* =========================================================
+   INICIO — separación de listas y lanzamientos
+   ========================================================= */
+
+/*
+ * En escritorio, cada lista necesita más aire visual
+ * para distinguir dónde termina una tarjeta y empieza otra.
+ */
+@media (min-width: 48.0625rem) {
+  .home-section-lists .horizontal-grid {
+    gap: clamp(30px, 3vw, 44px);
+  }
+}
+
+/*
+ * En mobile, los lanzamientos forman una colección compacta.
+ */
+@media (max-width: 48rem) {
+  .home-section-new-releases .horizontal-grid {
+    gap: 6px;
+  }
+}

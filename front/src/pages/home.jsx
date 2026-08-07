@@ -252,7 +252,7 @@ export default function Home() {
                 className="home-section-new-releases"
                 title="Nuevos lanzamientos"
                 action={
-                  <Link to="/buscar?categoria=lanzamientos">Ver todos</Link>
+                  <Link to="/buscar?categoria=lanzamientos">Buscar más</Link>
                 }
               >
                 {content.newReleases.map((release) => (
@@ -274,10 +274,10 @@ export default function Home() {
                 title="Reseñas de la comunidad"
                 action={<Link to="/comunidad?tipo=resenas">Ver más</Link>}
               >
-                {content.generatingStories.map((review) => (
+                {content.recentStories.map((review) => (
                   <ReviewCard key={review._id} review={review} home />
                 ))}
-                {!content.generatingStories.length && (
+                {!content.recentStories.length && (
                   <p className="empty-state">
                     Las primeras historias de la comunidad aparecerán acá.
                   </p>

@@ -121,7 +121,7 @@ export default function Reviews() {
 
                 <div className="rating-field review-page-rating review-optional-field" role="group" aria-labelledby="review-rating-title"><h2 id="review-rating-title">Tu valoración <span>(opcional)</span></h2><p>Solo vos podés verla.</p><div className="review-optional-control">{[1, 2, 3, 4, 5].map((star) => <button key={star} type="button" className={star <= form.rating ? "active" : ""} onClick={() => setForm({ ...form, rating: form.rating === star ? 0 : star })} aria-label={`${star} estrellas`} title={form.rating === star ? "Quitar valoración" : `${star} estrellas`}><AppIcon name="star" size={34} fill={star <= form.rating ? "currentColor" : "none"} /></button>)}</div></div>
 
-                <div className="review-optional-field"><h2>Tu significado <span>(opcional)</span></h2><p>Separalos con comas. Podés agregar hasta ocho.</p><label aria-label="Tu significado"><input value={form.significado} onChange={(event) => setForm({ ...form, significado: event.target.value })} placeholder="Viaje, hogar, descubrimiento" /></label></div>
+                <div className="review-optional-field"><h2>Tu significado <span>(opcional)</span></h2><p>Agregá hasta ocho etiquetas, separadas por comas.</p><label aria-label="Tu significado"><input value={form.significado} onChange={(event) => setForm({ ...form, significado: event.target.value })} placeholder="Viaje, hogar, descubrimiento" /></label></div>
               </aside>
 
               <div className="review-editor-story creation-editor-main">
