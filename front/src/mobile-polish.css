@@ -3260,3 +3260,23 @@
     column-gap: 0 !important;
   }
 }
+
+/* =========================================================
+   INICIO MOBILE — distancia uniforme entre lanzamientos
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  /* Por reseñar */
+  .home-page .home-review-queue {
+    gap: 24px !important;
+    column-gap: 24px !important;
+  }
+
+  /* Nuevos lanzamientos */
+  .home-page
+    .home-section-new-releases
+    .horizontal-grid {
+    gap: 24px !important;
+    column-gap: 24px !important;
+  }
+}
