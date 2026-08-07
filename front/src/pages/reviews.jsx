@@ -14,7 +14,10 @@ import {
   updateReview,
 } from "../services/reviews.service";
 import { setBreadcrumbContext } from "../services/breadcrumb.service";
-import { createAlbumSlug } from "../services/album-link.service";
+import {
+  createAlbumSlug,
+  getAlbumUrl,
+} from "../services/album-link.service";
 import { createArtistSlug } from "../services/artist-link.service";
 import AppIcon from "../components/app-icon";
 import useUnsavedChangesGuard from "../hooks/use-unsaved-changes-guard";
@@ -114,7 +117,20 @@ export default function Reviews() {
     try {
       await deleteReview(editId);
       setDeletePending(false);
-      navigate("/inicio", { replace: true });
+
+      navigate(
+        getAlbumUrl({
+          catalogId: form.catalogId,
+          artistId: form.artistId,
+          artist: form.artist,
+          album: form.album,
+          image: form.image,
+          releaseType: form.releaseType,
+          releaseDate: form.releaseDate,
+          year: form.year,
+        }),
+        { replace: true },
+      );
     } catch (error) {
       setStatus({
         type: "error",

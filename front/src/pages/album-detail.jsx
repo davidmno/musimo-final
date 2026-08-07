@@ -143,7 +143,13 @@ export default function AlbumDetail() {
                 </section>}
                 <section className="community-release-section">
                   <div className="section-header"><h2>Reseñas de la comunidad</h2>{reviews.length > 0 && <Link className="btn btn-secondary btn-sm" to={`${getAlbumUrl(release)}/resenas`}>Ver todas</Link>}</div>
-                  <div className="release-review-preview-grid">{reviews.slice(0, 3).map((review) => <ReviewCard key={review._id} review={review} preview showEmptyRating={isOwnReview(review, usuario)} />)}</div>
+                  <div className="release-review-preview-grid">{reviews.slice(0, 3).map((review) => <ReviewCard
+  key={review._id}
+  review={review}
+  preview
+  hideReleaseImage
+  showEmptyRating={isOwnReview(review, usuario)}
+/>)}</div>
                   {!reviews.length && <button className="empty-state empty-state-action empty-state-button" type="button" onClick={startReview}><span>Todavía nadie contó una historia sobre este lanzamiento.</span><strong>Escribir la primera reseña →</strong></button>}
                 </section>
                 <section className="more-by-artist"><h2>Más de {release.artist}</h2>{more.length > 0 ? <div className="result-grid more-releases-grid">{more.map((item) => <ReleaseCard key={item.catalogId} release={item} />)}</div> : <p className="empty-state">No encontramos otros lanzamientos disponibles de este artista.</p>}</section>

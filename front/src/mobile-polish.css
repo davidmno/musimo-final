@@ -3371,3 +3371,100 @@
     color: var(--danger, #b42318);
   }
 }
+
+/* =========================================================
+   RESEÑA MOBILE — ajuste final del formulario
+   ========================================================= */
+
+@media (max-width: 30rem) {
+  /* Portada siempre perfectamente cuadrada */
+  .review-editor-page .review-selected-release {
+    width: 100% !important;
+    max-width: none !important;
+    grid-template-columns: 112px minmax(0, 1fr) !important;
+    box-sizing: border-box !important;
+  }
+
+  .review-editor-page
+    .review-selected-release
+    > img {
+    width: 112px !important;
+    height: 112px !important;
+    min-width: 112px !important;
+    min-height: 112px !important;
+    max-width: 112px !important;
+    max-height: 112px !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    display: block !important;
+  }
+
+  /*
+   * Todos los bloques ocupan exactamente el mismo ancho.
+   */
+  .review-editor-page
+    .review-editor-story
+    > .creation-section-heading,
+  .review-editor-page
+    .review-editor-story
+    > label,
+  .review-editor-page
+    .review-page-rating,
+  .review-editor-page
+    .review-editor-context
+    > .review-optional-field:not(.review-page-rating),
+  .review-editor-page
+    .review-moment-block {
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /*
+   * Separadores del mismo ancho y mismo ritmo.
+   */
+  .review-editor-page
+    .review-page-rating,
+  .review-editor-page
+    .review-editor-context
+    > .review-optional-field:not(.review-page-rating),
+  .review-editor-page
+    .review-moment-block {
+    margin-top: 24px !important;
+    padding-top: 24px !important;
+    border-top: 1px solid var(--border) !important;
+    border-bottom: 0 !important;
+  }
+
+  /*
+   * Tu significado usa todo el ancho disponible.
+   */
+  .review-editor-page
+    .review-editor-context
+    > .review-optional-field:not(.review-page-rating)
+    label,
+  .review-editor-page
+    .review-editor-context
+    > .review-optional-field:not(.review-page-rating)
+    input {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  /*
+   * Valoración más compacta para evitar
+   * que quede como una sección demasiado vacía.
+   */
+  .review-editor-page
+    .review-page-rating
+    .review-optional-control {
+    margin-top: 10px !important;
+  }
+
+  .review-editor-page
+    .review-page-rating {
+    padding-bottom: 0 !important;
+  }
+}

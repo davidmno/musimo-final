@@ -104,7 +104,13 @@ export function RatingStars({
   );
 }
 
-export function ReviewCard({ review, compact = false, preview = false, showEmptyRating = false }) {
+export function ReviewCard({
+  review,
+  compact = false,
+  preview = false,
+  showEmptyRating = false,
+  hideReleaseImage = false,
+}) {
   const author = review.author || { nombre: review.username, handle: "" };
   const rating = Number(review.rating) || 0;
   const showRating = rating > 0 || showEmptyRating;
@@ -112,7 +118,21 @@ export function ReviewCard({ review, compact = false, preview = false, showEmpty
     <article className={`${compact ? "content-row story-row" : "story-tile"}${preview ? " story-tile--preview" : ""}`}>
       <Link className="story-tile-main" to={`/resena/${review._id}`}>
         <span className="story-author"><Avatar user={author} size={32} /><span>Reseña de <b>{author?.nombre || "Usuario"}</b></span></span>
-        <span className="story-release-copy"><span><strong>{review.album}</strong><span>{review.artist}</span></span>{review.image && <img src={review.image} alt="" loading="lazy" decoding="async" onError={fallbackCover} />}</span>
+        <span className="story-release-copy">
+          <span>
+            <strong>{review.album}</strong>
+            <span>{review.artist}</span>
+          </span>
+          {!hideReleaseImage && review.image && (
+            <img
+              src={review.image}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={fallbackCover}
+            />
+          )}
+        </span>
         {showRating && (
           <RatingStars
             value={rating}
