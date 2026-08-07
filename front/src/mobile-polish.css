@@ -3568,3 +3568,16 @@
     max-width: 100% !important;
   }
 }
+
+/* COMUNIDAD MOBILE — portadas de listas */
+
+@media (max-width: 48rem) {
+  .community-list-story .community-list-covers,
+  .community-list-story .community-list-covers img {
+    height: 96px;
+  }
+
+  .community-list-story .community-list-covers-empty {
+    height: 96px;
+  }
+}

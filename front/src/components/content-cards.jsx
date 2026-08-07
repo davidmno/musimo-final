@@ -186,6 +186,31 @@ export function ListCard({
               <strong>{list.title}</strong>
             </span>
           </span>
+
+          <span
+            className="community-list-covers"
+            aria-hidden="true"
+          >
+            {albums.slice(0, 3).map((album, index) => (
+              <img
+                key={`${album.catalogId || album.album}-${index}`}
+                src={
+                  album.image ||
+                  "/images/cover-placeholder.png"
+                }
+                alt=""
+                loading="lazy"
+                decoding="async"
+                onError={fallbackCover}
+              />
+            ))}
+
+            {!albums.length && (
+              <span className="community-list-covers-empty">
+                m
+              </span>
+            )}
+          </span>
         </Link>
       </article>
     );
