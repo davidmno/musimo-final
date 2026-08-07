@@ -1,4 +1,4 @@
-const VERSION = "v3";
+const VERSION = "v4";
 const PRECACHE = `musimo-precache-${VERSION}`;
 const RUNTIME = `musimo-runtime-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
