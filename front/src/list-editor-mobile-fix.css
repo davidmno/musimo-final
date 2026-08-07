@@ -1,0 +1,59 @@
+/* Ajuste puntual del editor de listas en mobile.
+   Mantiene portada, título/artista y controles de orden en una sola fila. */
+@media (max-width: 48rem) {
+  .list-editor-panel .selected-list-items article {
+    grid-template-columns: 14px 20px 46px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .list-editor-panel .selected-list-items article > div {
+    grid-column: auto;
+    align-self: center;
+    justify-content: flex-end;
+    gap: 2px;
+  }
+
+  .list-editor-panel .selected-list-items article > div button {
+    width: 28px;
+    height: 32px;
+    min-width: 28px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  .list-editor-panel .selected-list-items article > span:not(.order-number) {
+    min-width: 0;
+  }
+
+  .list-editor-panel .selected-list-items article strong,
+  .list-editor-panel .selected-list-items article small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .list-editor-panel .order-number {
+    text-align: center;
+  }
+}
+
+@media (max-width: 22rem) {
+  .list-editor-panel .selected-list-items article {
+    grid-template-columns: 12px 18px 42px minmax(0, 1fr) auto;
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  .list-editor-panel .selected-list-items article img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .list-editor-panel .selected-list-items article > div button {
+    width: 26px;
+    min-width: 26px;
+  }
+}
