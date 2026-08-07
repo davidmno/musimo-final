@@ -9,6 +9,7 @@ import {
   getList,
   updateList,
 } from "../services/lists.service";
+import { canGoBackInApp } from "../services/navigation.service";
 
 const COMMUNITY_LISTS_URL = "/comunidad?tipo=listas";
 
@@ -76,10 +77,20 @@ export default function Lists() {
       throw new Error("La lista se guardó, pero no se pudo abrir su detalle.");
     }
 
+    if (editId && canGoBackInApp()) {
+      navigate(-1);
+      return;
+    }
+
     navigate(`/lista/${savedId}`, { replace: true });
   }
 
   function cancel() {
+    if (canGoBackInApp()) {
+      navigate(-1);
+      return;
+    }
+
     navigate(editId ? `/lista/${editId}` : COMMUNITY_LISTS_URL, {
       replace: true,
     });
