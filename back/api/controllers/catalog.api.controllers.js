@@ -59,7 +59,12 @@ export async function getArtistImages(req, res, next) {
 
 export async function getNewReleases(req, res, next) {
   try {
-    res.json(await catalog.getNewReleases(req.query.limit));
+    res.json(
+      await catalog.getNewReleases(req.query.limit, {
+        genre: "pop",
+        days: 15,
+      }),
+    );
   } catch (error) {
     next(error);
   }

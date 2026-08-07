@@ -1304,6 +1304,8 @@ async function localSearchFallback(
 
 async function localNewReleasesFallback(
   limit,
+  startDate,
+  endDate,
 ) {
   try {
     const db = await getDb();
@@ -1313,7 +1315,12 @@ async function localNewReleasesFallback(
         db
           .collection("reviews")
           .find(
-            {},
+            {
+              releaseDate: {
+                $gte: startDate,
+                $lte: endDate,
+              },
+            },
             {
               projection: {
                 catalogId: 1,
@@ -1349,8 +1356,21 @@ async function localNewReleasesFallback(
               $unwind: "$albums",
             },
             {
+              $match: {
+                "albums.releaseDate": {
+                  $gte: startDate,
+                  $lte: endDate,
+                },
+              },
+            },
+            {
               $replaceRoot: {
                 newRoot: "$albums",
+              },
+            },
+            {
+              $sort: {
+                releaseDate: -1,
               },
             },
             {
@@ -1360,23 +1380,26 @@ async function localNewReleasesFallback(
           .toArray(),
       ]);
 
-    return sortReleasesNewestFirst(
-      uniqueReleases(
-        [...reviews, ...listAlbums]
-          .filter(
-            (item) =>
-              item.album &&
-              item.artist,
-          )
-          .map((item) => ({
-            ...item,
-            id: item.catalogId,
-            title: item.album,
-            slug: slugify(
-              `${item.artist}-${item.album}`,
+    return uniqueReleases(
+      [...reviews, ...listAlbums]
+        .filter(
+          (item) =>
+            item.album &&
+            item.artist &&
+            isReleaseInsideDateRange(
+              item,
+              startDate,
+              endDate,
             ),
-          })),
-      ),
+        )
+        .map((item) => ({
+          ...item,
+          id: item.catalogId,
+          title: item.album,
+          slug: slugify(
+            `${item.artist}-${item.album}`,
+          ),
+        })),
     ).slice(0, limit);
   } catch {
     return [];
@@ -1888,38 +1911,118 @@ function curatedReleaseScore(
   return score;
 }
 
+function normalizedFullReleaseDate(
+  release = {},
+) {
+  const value = String(
+    release.releaseDate || "",
+  ).trim();
+
+  /*
+   * Para la sección de novedades sólo aceptamos
+   * fechas completas. Un año o un año-mes no
+   * permiten asegurar que el lanzamiento esté
+   * realmente dentro de los últimos 15 días.
+   */
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
+    return "";
+  }
+
+  const parsed = new Date(
+    `${value}T00:00:00.000Z`,
+  );
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return value;
+}
+
+function isReleaseInsideDateRange(
+  release = {},
+  startDate,
+  endDate,
+) {
+  const releaseDate =
+    normalizedFullReleaseDate(release);
+
+  if (!releaseDate) {
+    return false;
+  }
+
+  return (
+    releaseDate >= startDate &&
+    releaseDate <= endDate
+  );
+}
+
 function sortCuratedNewReleases(
   releases = [],
 ) {
   return [...releases].sort(
     (left, right) => {
-      const priorityDifference =
-        curatedReleaseScore(right) -
-        curatedReleaseScore(left);
-
-      if (priorityDifference) {
-        return priorityDifference;
-      }
-
-      const leftDate = String(
-        left.releaseDate ||
-          left.year ||
-          "",
-      );
-
-      const rightDate = String(
-        right.releaseDate ||
-          right.year ||
-          "",
-      );
-
+      /*
+       * La fecha es siempre el criterio principal.
+       * El lanzamiento más reciente aparece primero.
+       */
       const dateDifference =
-        rightDate.localeCompare(
-          leftDate,
+        normalizedFullReleaseDate(
+          right,
+        ).localeCompare(
+          normalizedFullReleaseDate(left),
         );
 
       if (dateDifference) {
         return dateDifference;
+      }
+
+      /*
+       * Dentro de la misma fecha,
+       * priorizamos álbumes.
+       */
+      const albumDifference =
+        Number(isAlbumRelease(right)) -
+        Number(isAlbumRelease(left));
+
+      if (albumDifference) {
+        return albumDifference;
+      }
+
+      /*
+       * Si también coinciden en tipo,
+       * priorizamos artistas reconocibles.
+       */
+      const artistDifference =
+        Number(
+          isPriorityPopArtist(right),
+        ) -
+        Number(
+          isPriorityPopArtist(left),
+        );
+
+      if (artistDifference) {
+        return artistDifference;
+      }
+
+      /*
+       * Las compilaciones quedan detrás
+       * de los lanzamientos regulares.
+       */
+      const compilationDifference =
+        Number(
+          left.releaseType ===
+            "Compilación",
+        ) -
+        Number(
+          right.releaseType ===
+            "Compilación",
+        );
+
+      if (compilationDifference) {
+        return compilationDifference;
       }
 
       return String(
@@ -1943,104 +2046,209 @@ export async function getNewReleases(
   options = {},
 ) {
   const safeLimit = Math.min(
-    Math.max(Number(limit) || 12, 1),
+    Math.max(
+      Number(limit) || 12,
+      1,
+    ),
     24,
   );
+
   const days = Math.min(
-    Math.max(Number(options.days) || 90, 1),
+    Math.max(
+      Number(options.days) || 15,
+      1,
+    ),
     365,
   );
-  const genre = normalizeText(options.genre || "");
+
+  const genre = normalizeText(
+    options.genre || "pop",
+  );
+
   const end = new Date();
   const start = new Date(end);
 
-  start.setDate(start.getDate() - days);
+  start.setDate(
+    start.getDate() - days,
+  );
 
-  const date = (value) => value.toISOString().slice(0, 10);
+  const date = (value) =>
+    value
+      .toISOString()
+      .slice(0, 10);
+
+  const startDate = date(start);
+  const endDate = date(end);
+
   const dateClause =
-    `firstreleasedate:[${date(start)} TO ${date(end)}]`;
-  const finalCacheKey =
-    `new-curated:v1:${genre || "all"}:${days}:${date(end)}:${safeLimit}`;
+    `firstreleasedate:[` +
+    `${startDate} TO ${endDate}]`;
+
+  const genreClause = genre
+    ? `tag:${genre.replace(
+        /[^a-z0-9-]/g,
+        "",
+      )}`
+    : "";
+
+  const generalQuery =
+    encodeURIComponent(
+      [
+        genreClause,
+        dateClause,
+      ]
+        .filter(Boolean)
+        .join(" AND "),
+    );
+
+  const priorityArtistsClause =
+    PRIORITY_POP_ARTISTS.map(
+      (artist) =>
+        `artistname:"${artist}"`,
+    ).join(" OR ");
+
+  const priorityQuery =
+    encodeURIComponent(
+      `(${priorityArtistsClause}) AND ${dateClause}`,
+    );
 
   try {
+    const fetchLimit = Math.min(
+      Math.max(
+        safeLimit * 5,
+        60,
+      ),
+      100,
+    );
+
+    const [
+      priorityResult,
+      generalResult,
+    ] = await Promise.allSettled([
+      persistentCached(
+        /*
+         * v5 evita reutilizar el caché anterior,
+         * que podía contener fechas fuera del rango.
+         */
+        `new:v5:priority:${days}:` +
+          `${endDate}:${safeLimit}`,
+        () =>
+          queuedMusicBrainzFetch(
+            `/release-group?query=${priorityQuery}` +
+              `&inc=artist-credits` +
+              `&fmt=json` +
+              `&limit=${fetchLimit}`,
+          ),
+        CACHE_POLICY.newReleases,
+      ),
+
+      persistentCached(
+        `new:v5:${genre || "all"}:` +
+          `${days}:${endDate}:` +
+          `${safeLimit}`,
+        () =>
+          queuedMusicBrainzFetch(
+            `/release-group?query=${generalQuery}` +
+              `&inc=artist-credits` +
+              `&fmt=json` +
+              `&limit=${fetchLimit}`,
+          ),
+        CACHE_POLICY.newReleases,
+      ),
+    ]);
+
+    const priorityGroups =
+      priorityResult.status ===
+      "fulfilled"
+        ? priorityResult.value[
+            "release-groups"
+          ] || []
+        : [];
+
+    const generalGroups =
+      generalResult.status ===
+      "fulfilled"
+        ? generalResult.value[
+            "release-groups"
+          ] || []
+        : [];
+
+    const groups = [
+      ...priorityGroups,
+      ...generalGroups,
+    ];
+
+    if (!groups.length) {
+      throw new Error(
+        "No se encontraron lanzamientos externos.",
+      );
+    }
+
     /*
-     * Guardamos también la selección final. Así la portada se valida una sola
-     * vez por período de caché y la pantalla de Inicio no repite decenas de
-     * consultas al servicio de imágenes en cada visita.
+     * Aunque la búsqueda externa ya contiene
+     * un rango, volvemos a validarlo localmente.
+     * De esta manera ningún dato incorrecto
+     * de MusicBrainz puede escapar al filtro.
      */
-    return await persistentCached(
-      finalCacheKey,
-      async () => {
-        const genreClause = genre
-          ? `tag:${genre.replace(/[^a-z0-9-]/g, "")}`
-          : "";
-        const generalQuery = encodeURIComponent(
-          [genreClause, dateClause].filter(Boolean).join(" AND "),
-        );
-        const priorityArtistsClause = PRIORITY_POP_ARTISTS
-          .map((artist) => `artistname:"${artist}"`)
-          .join(" OR ");
-        const priorityQuery = encodeURIComponent(
-          `(${priorityArtistsClause}) AND ${dateClause}`,
-        );
-        const fetchLimit = Math.min(
-          Math.max(safeLimit * 5, 60),
-          100,
-        );
+    const releases = uniqueById(groups)
+      .map(normalizeNewRelease)
+      .filter((release) =>
+        isReleaseInsideDateRange(
+          release,
+          startDate,
+          endDate,
+        ),
+      );
 
-        const [priorityResult, generalResult] = await Promise.allSettled([
-          persistentCached(
-            `new:v4:priority:${days}:${date(end)}:${safeLimit}`,
-            () =>
-              queuedMusicBrainzFetch(
-                `/release-group?query=${priorityQuery}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
-              ),
-            CACHE_POLICY.newReleases,
-          ),
-          persistentCached(
-            `new:v4:${genre || "all"}:${days}:${date(end)}:${safeLimit}`,
-            () =>
-              queuedMusicBrainzFetch(
-                `/release-group?query=${generalQuery}&inc=artist-credits&fmt=json&limit=${fetchLimit}`,
-              ),
-            CACHE_POLICY.newReleases,
-          ),
-        ]);
+    const orderedReleases =
+      sortCuratedNewReleases(
+        releases,
+      );
 
-        const priorityGroups =
-          priorityResult.status === "fulfilled"
-            ? priorityResult.value["release-groups"] || []
-            : [];
-        const generalGroups =
-          generalResult.status === "fulfilled"
-            ? generalResult.value["release-groups"] || []
-            : [];
-        const groups = [...priorityGroups, ...generalGroups];
+    const releasesWithCovers =
+      await takeReleasesWithCovers(
+        orderedReleases,
+        safeLimit,
+      );
 
-        if (!groups.length) {
-          throw new Error("No se encontraron lanzamientos externos.");
-        }
+    if (releasesWithCovers.length) {
+      return releasesWithCovers;
+    }
 
-        const releases = uniqueById(groups).map(normalizeNewRelease);
-        const orderedReleases = sortCuratedNewReleases(releases);
-        const selected = await takeReleasesWithCovers(
-          orderedReleases,
-          safeLimit,
-        );
-
-        if (!selected.length) {
-          throw new Error("No se encontraron lanzamientos con portada.");
-        }
-
-        return selected;
-      },
-      CACHE_POLICY.newReleases,
+    throw new Error(
+      "No hay lanzamientos recientes con portada.",
     );
   } catch {
-    const fallback = await localNewReleasesFallback(safeLimit * 3);
-    const orderedFallback = sortCuratedNewReleases(fallback);
+    /*
+     * El fallback también recibe exactamente
+     * el mismo rango. No puede devolver discos
+     * antiguos guardados en reseñas o listas.
+     */
+    const fallback =
+      await localNewReleasesFallback(
+        safeLimit * 3,
+        startDate,
+        endDate,
+      );
 
-    return takeReleasesWithCovers(orderedFallback, safeLimit);
+    const filteredFallback =
+      fallback.filter((release) =>
+        isReleaseInsideDateRange(
+          release,
+          startDate,
+          endDate,
+        ),
+      );
+
+    const orderedFallback =
+      sortCuratedNewReleases(
+        filteredFallback,
+      );
+
+    return takeReleasesWithCovers(
+      orderedFallback,
+      safeLimit,
+    );
   }
 }
 

@@ -57,17 +57,36 @@ export default function ListForm({ initialList, onSave, onCancel }) {
   }
 
   async function submit(event) {
-    event.preventDefault(); setBusy(true); setStatus({ type: "", text: "" });
-    try { await onSave(form); }
-    catch (error) { setStatus({ type: "error", text: error.message || "No se pudo guardar la lista." }); }
-    finally { setBusy(false); }
+    event.preventDefault();
+
+    if (!form.albums.length) {
+      setStatus({
+        type: "error",
+        text: "Agregá al menos un lanzamiento para guardar la lista.",
+      });
+      return;
+    }
+
+    setBusy(true);
+    setStatus({ type: "", text: "" });
+
+    try {
+      await onSave(form);
+    } catch (error) {
+      setStatus({
+        type: "error",
+        text: error.message || "No se pudo guardar la lista.",
+      });
+    } finally {
+      setBusy(false);
+    }
   }
 
   return <section className="list-editor-panel creation-editor-panel">
     <StatusMessage type={status.type}>{status.text}</StatusMessage>
     <form onSubmit={submit} className="list-editor-form creation-editor-form">
       <div className="mobile-editor-toolbar"><button className="back-button" type="button" onClick={requestCancel}><AppIcon name="arrow-left" size={16} />Volver</button><strong>{initialList?._id ? "Editar lista" : "Nueva lista"}</strong><span aria-hidden="true" /></div>
-      <PageHeader trail={[{ label: "Inicio", to: "/inicio" }, { label: "Comunidad", to: "/comunidad" }, { label: initialList?._id ? "Editar lista" : "Nueva lista" }]} title={initialList?._id ? "Editar lista" : "Nueva lista"} description="Reuní y ordená lanzamientos alrededor de una idea." className="creation-editor-heading" action={<div className="form-actions creation-desktop-actions"><button className="btn btn-tertiary" type="button" onClick={requestCancel}>Cancelar</button><button className="btn btn-primary" type="submit" disabled={busy} aria-busy={busy}>{busy ? "Guardando…" : initialList?._id ? "Guardar cambios" : "Publicar lista"}</button></div>} />
+      <PageHeader trail={[{ label: "Inicio", to: "/inicio" }, { label: "Comunidad", to: "/comunidad" }, { label: initialList?._id ? "Editar lista" : "Nueva lista" }]} title={initialList?._id ? "Editar lista" : "Nueva lista"} description="Reuní y ordená lanzamientos alrededor de una idea." className="creation-editor-heading" action={<div className="form-actions creation-desktop-actions"><button className="btn btn-tertiary" type="button" onClick={requestCancel}>Cancelar</button><button className="btn btn-primary" type="submit" disabled={busy || !form.albums.length} aria-busy={busy}>{busy ? "Guardando…" : initialList?._id ? "Guardar cambios" : "Publicar lista"}</button></div>} />
       <div className="list-editor-columns creation-editor-columns">
         <aside className="list-editor-fields creation-editor-sidebar"><div className="creation-section-heading"><h2>Detalles</h2><p>Definí el nombre, la descripción y quién puede verla.</p></div><label>Título<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} minLength="3" maxLength="100" placeholder="Mi nueva lista" required /></label><label>Descripción<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} maxLength="1000" placeholder="Contá de qué se trata esta lista" /></label><label>Visibilidad<select value={form.visibility} onChange={(event) => setForm({ ...form, visibility: event.target.value })}><option value="public">Pública</option><option value="private">Privada</option></select><small>{form.visibility === "public" ? "Cualquier persona puede verla." : "Solamente vos podés verla."}</small></label></aside>
         <div className="list-editor-releases creation-editor-main">
@@ -82,7 +101,7 @@ export default function ListForm({ initialList, onSave, onCancel }) {
           <div className="release-picker"><div className="search-box"><AppIcon name="search" /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") search(event); }} placeholder="Buscar lanzamientos para agregar" />{query && <button className="search-clear" type="button" onClick={() => { setQuery(""); setResults([]); }} aria-label="Limpiar búsqueda"><AppIcon name="x" size={16} /></button>}<button className="btn btn-primary" type="button" onClick={search} disabled={busy}>{busy ? "Buscando…" : "Buscar"}</button></div><div className="picker-results">{results.filter((release) => !form.albums.some((selected) => selected.catalogId === release.catalogId)).map((release) => <button type="button" key={release.catalogId} onClick={() => add(release)}><img src={release.image || "/images/cover-placeholder.png"} alt="" onError={fallbackCover} /><span><strong>{release.album}</strong><small>{release.artist} · {release.releaseType}</small></span><b><AppIcon name="plus" size={16} /></b></button>)}</div></div>
         </div>
       </div>
-      <div className="mobile-sticky-submit"><button className="btn btn-primary" type="submit" disabled={busy} aria-busy={busy}>{busy ? "Guardando…" : initialList?._id ? "Guardar cambios" : "Publicar lista"}</button></div>
+      <div className="mobile-sticky-submit"><button className="btn btn-primary" type="submit" disabled={busy || !form.albums.length} aria-busy={busy}>{busy ? "Guardando…" : initialList?._id ? "Guardar cambios" : "Publicar lista"}</button></div>
     </form>
     <ConfirmDialog open={cancelPending} title="¿Descartar los cambios?" description={initialList?._id ? "Las modificaciones de esta lista no se guardarán." : "La lista nueva y los lanzamientos agregados se perderán."} confirmLabel="Descartar" onCancel={() => setCancelPending(false)} onConfirm={onCancel} />
   </section>;
