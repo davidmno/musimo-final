@@ -25,6 +25,7 @@ import {
 import { getAlbumUrl } from "../services/album-link.service";
 import { getArtistUrl } from "../services/artist-link.service";
 import { setBreadcrumbContext } from "../services/breadcrumb.service";
+import { canGoBackInApp } from "../services/navigation.service";
 import BackButton from "../components/back-button";
 import ActionSheet from "../components/action-sheet";
 import AppIcon from "../components/app-icon";
@@ -175,9 +176,13 @@ export default function ReviewDetail() {
     try {
       await deleteReview(id);
 
-      navigate(getAlbumUrl(review), {
-        replace: true,
-      });
+      if (canGoBackInApp()) {
+        navigate(-1);
+      } else {
+        navigate(getAlbumUrl(review), {
+          replace: true,
+        });
+      }
     } catch (error) {
       setStatus({
         type: "error",
