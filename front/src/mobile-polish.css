@@ -3531,3 +3531,26 @@
     width: 100% !important;
   }
 }
+
+/* =========================================================
+   HOME MOBILE — empty states a ancho completo
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  .home-page .home-empty-state {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  .home-page .home-section-new-releases .home-empty-state,
+  .home-page .home-section-reviews .home-empty-state,
+  .home-page .home-section-lists .home-empty-state {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+}
