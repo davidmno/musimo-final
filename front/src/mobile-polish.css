@@ -3293,3 +3293,55 @@
     font-weight: 700 !important;
   }
 }
+
+/* =========================================================
+   INICIO — ajuste puntual final de carriles
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  /*
+   * Por reseñar:
+   * sus cards ya tienen ancho fijo de 145px.
+   */
+  .home-page .home-review-queue {
+    gap: 24px !important;
+    column-gap: 24px !important;
+  }
+
+  /*
+   * Nuevos lanzamientos:
+   * anulamos el 43vw heredado de styles.css.
+   * Así la columna mide lo mismo que la card visible
+   * y el gap pasa a ser realmente de 24px.
+   */
+  .home-page
+    .home-section-new-releases
+    .horizontal-grid {
+    grid-auto-columns: 120px !important;
+    gap: 24px !important;
+    column-gap: 24px !important;
+  }
+
+  /*
+   * Listas para descubrir:
+   * sin sangría extra al comienzo del carril.
+   */
+  .home-page
+    .home-section-lists
+    .horizontal-grid {
+    margin-inline-start: 0 !important;
+    padding-inline-start: 0 !important;
+    scroll-padding-inline-start: 0 !important;
+  }
+}
+
+/* Desktop: misma distancia entre Por reseñar y Nuevos lanzamientos. */
+@media (min-width: 48.0625rem) {
+  .home-page .home-review-queue,
+  .home-page
+    .home-section-new-releases
+    .horizontal-grid {
+    gap: 18px !important;
+    column-gap: 18px !important;
+  }
+}
