@@ -2974,3 +2974,85 @@
 
 
 /* FIN MUSIMO: expansión de contenido junto a barras laterales */
+
+/* =========================================================
+   COMUNIDAD — paginación mobile en una sola fila
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  .social-page .community-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center !important;
+    flex-wrap: nowrap !important;
+    gap: 4px;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+
+  .social-page .community-pagination::-webkit-scrollbar {
+    display: none;
+  }
+
+  .social-page
+    .community-pagination
+    .community-page-numbers {
+    order: initial !important;
+    width: auto !important;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center !important;
+    flex-wrap: nowrap !important;
+    gap: 4px;
+  }
+
+  .social-page
+    .community-pagination
+    .community-next-page {
+    flex: 0 0 36px;
+  }
+}
+
+/* =========================================================
+   COMUNIDAD — paginación mobile en una sola fila
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  .social-page .community-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center !important;
+    flex-wrap: nowrap !important;
+    gap: 4px;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+
+  .social-page .community-pagination::-webkit-scrollbar {
+    display: none;
+  }
+
+  .social-page
+    .community-pagination
+    .community-page-numbers {
+    order: initial !important;
+    width: auto !important;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center !important;
+    flex-wrap: nowrap !important;
+    gap: 4px;
+  }
+
+  .social-page
+    .community-pagination
+    .community-next-page {
+    flex: 0 0 36px;
+  }
+}
