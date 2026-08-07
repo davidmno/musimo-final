@@ -239,7 +239,7 @@ export default function Search() {
                   setSearchRequest((value) => value + 1);
                 }
               }}
-              placeholder="Buscar álbumes, artistas, listas o usuarios."
+              placeholder="Buscar música, listas o usuarios."
             />
             {query && (
               <button
