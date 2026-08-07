@@ -10,6 +10,11 @@ import { Avatar } from "./content-cards";
 import BottomSheet from "./bottom-sheet";
 import AppIcon from "./app-icon";
 import { requestGuardedNavigation } from "../hooks/use-unsaved-changes-guard";
+import {
+  canGoBackInApp,
+  getSemanticBackFallback,
+} from "../services/navigation.service";
+
 function notificationLabel(item) {
   if (item.type === "follow") return "empezó a seguirte";
   if (item.type === "comment_resonance") return "resonó con tu comentario";
@@ -50,11 +55,13 @@ export default function Navbar() {
   useEffect(() => {
     if (userId) refreshUsuario().catch(() => undefined);
   }, [userId, refreshUsuario]);
+
   useEffect(() => {
     loadNotifications();
     const timer = window.setInterval(loadNotifications, 30000);
     return () => window.clearInterval(timer);
   }, [loadNotifications]);
+
   useEffect(() => {
     function markLocalNotificationsRead() {
       setNotifications((current) => current.map((item) => ({ ...item, read: true })));
@@ -62,16 +69,19 @@ export default function Navbar() {
     window.addEventListener("musimo:notifications-read", markLocalNotificationsRead);
     return () => window.removeEventListener("musimo:notifications-read", markLocalNotificationsRead);
   }, []);
+
   useEffect(() => {
     setProfileOpen(false);
     setNotificationOpen(false);
     setCreateOpen(false);
   }, [location.pathname, location.search]);
+
   useEffect(() => {
     setProfileOpen(false);
     setNotificationOpen(false);
     setCreateOpen(false);
   }, [isMobile]);
+
   useEffect(() => {
     function close(event) {
       if (
@@ -84,6 +94,7 @@ export default function Navbar() {
         setCreateOpen(false);
       }
     }
+
     function escape(event) {
       if (event.key === "Escape" && !isMobile) {
         setProfileOpen(false);
@@ -91,6 +102,7 @@ export default function Navbar() {
         setCreateOpen(false);
       }
     }
+
     document.addEventListener("pointerdown", close);
     document.addEventListener("keydown", escape);
     return () => {
@@ -105,6 +117,7 @@ export default function Navbar() {
       navigate("/iniciar-sesion");
     });
   }
+
   async function openNotification(item) {
     if (!item.read) {
       await markNotificationsRead(item._id).catch(() => undefined);
@@ -115,9 +128,7 @@ export default function Navbar() {
       );
     }
     setNotificationOpen(false);
-    requestGuardedNavigation(() =>
-      navigate(notificationDestination(item)),
-    );
+    requestGuardedNavigation(() => navigate(notificationDestination(item)));
   }
 
   async function markAllNotifications() {
@@ -136,40 +147,26 @@ export default function Navbar() {
 
   function goBack() {
     requestGuardedNavigation(() => {
-      const historyIndex = Number(
-        window.history.state?.idx || 0,
-      );
-
-      if (historyIndex > 0) {
+      if (canGoBackInApp()) {
         navigate(-1);
         return;
       }
 
-      const path = location.pathname;
-
-      if (path.startsWith("/artista/")) {
-        navigate("/buscar?categoria=artistas");
-      } else if (
-        path.startsWith("/lanzamiento/") ||
-        path.startsWith("/resena") ||
-        path.startsWith("/resenas")
-      ) {
-        navigate("/buscar?categoria=lanzamientos");
-      } else if (
-        path.startsWith("/lista") ||
-        path.startsWith("/comunidad")
-      ) {
-        navigate("/comunidad");
-      } else {
-        navigate("/inicio");
-      }
+      navigate(getSemanticBackFallback(location.pathname), {
+        replace: true,
+      });
     });
   }
 
-  const mobileRoot = location.pathname === "/inicio";
-const ownProfilePath = `/usuario/${usuario?.handle || "perfil"}`;
-const isOwnMobileProfile =
-  isMobile && location.pathname === ownProfilePath;
+  const ownProfilePath = `/usuario/${usuario?.handle || "perfil"}`;
+  const isOwnMobileProfile = isMobile && location.pathname === ownProfilePath;
+  const isPrimaryMobileRoot =
+    location.pathname === "/inicio" ||
+    location.pathname === "/comunidad" ||
+    location.pathname === "/buscar" ||
+    location.pathname === ownProfilePath;
+  const mobileRoot = isPrimaryMobileRoot && !location.state?.contextualBack;
+
   return (
     <>
       <header className="app-nav-wrap" ref={rootRef}>
@@ -284,46 +281,51 @@ const isOwnMobileProfile =
         </div>
         <div className="mobile-app-header">
           {!mobileRoot ? (
-            <button className="mobile-app-back" type="button" onClick={goBack} aria-label="Volver">
+            <button
+              className="mobile-app-back"
+              type="button"
+              onClick={goBack}
+              aria-label="Volver"
+            >
               <AppIcon name="arrow-left" size={22} />
             </button>
-          ) : <span className="mobile-app-header-spacer" aria-hidden="true" />}
+          ) : (
+            <span className="mobile-app-header-spacer" aria-hidden="true" />
+          )}
           <Link to="/inicio" className="mobile-app-logo" aria-label="musimo, inicio">
             <img src="/images/logo.png" alt="musimo" />
           </Link>
           {isOwnMobileProfile ? (
-  <button
-    className="mobile-notification-trigger"
-    type="button"
-    onClick={signOut}
-    aria-label="Cerrar sesión"
-    title="Cerrar sesión"
-  >
-    <AppIcon name="logout" size={23} />
-  </button>
-) : (
-  <button
-    className="mobile-notification-trigger"
-    type="button"
-    onClick={() =>
-      requestGuardedNavigation(() =>
-        navigate("/notificaciones"),
-      )
-    }
-    aria-label={
-      unread
-        ? `${unread} notificaciones sin leer`
-        : "Notificaciones"
-    }
-  >
-    <AppIcon name="bell" size={23} />
-    {unread > 0 && (
-      <span className="notification-badge">
-        {unread > 99 ? "99+" : unread}
-      </span>
-    )}
-  </button>
-)}
+            <button
+              className="mobile-notification-trigger"
+              type="button"
+              onClick={signOut}
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
+            >
+              <AppIcon name="logout" size={23} />
+            </button>
+          ) : (
+            <button
+              className="mobile-notification-trigger"
+              type="button"
+              onClick={() =>
+                requestGuardedNavigation(() => navigate("/notificaciones"))
+              }
+              aria-label={
+                unread
+                  ? `${unread} notificaciones sin leer`
+                  : "Notificaciones"
+              }
+            >
+              <AppIcon name="bell" size={23} />
+              {unread > 0 && (
+                <span className="notification-badge">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </header>
       <nav className="mobile-tabbar" aria-label="Navegación móvil">
@@ -356,34 +358,38 @@ const isOwnMobileProfile =
         </NavLink>
       </nav>
       {isMobile && (
-        <>
-          <BottomSheet
-            open={createOpen}
-            title="Crear en musimo"
-            description="Elegí qué querés registrar."
-            onClose={() => setCreateOpen(false)}
-            className="create-sheet"
+        <BottomSheet
+          open={createOpen}
+          title="Crear en musimo"
+          description="Elegí qué querés registrar."
+          onClose={() => setCreateOpen(false)}
+          className="create-sheet"
+        >
+          <div className="create-sheet-actions">
+            <Link to="/buscar" onClick={() => setCreateOpen(false)}>
+              <AppIcon name="pencil" size={22} />
+              <span>
+                <strong>Escribir reseña</strong>
+                <small>Buscá un lanzamiento para comenzar</small>
+              </span>
+            </Link>
+            <Link to="/listas?nueva=1" onClick={() => setCreateOpen(false)}>
+              <AppIcon name="list" size={22} />
+              <span>
+                <strong>Crear lista</strong>
+                <small>Reuní y ordená lanzamientos</small>
+              </span>
+            </Link>
+          </div>
+          <div className="create-sheet-divider" />
+          <button
+            className="create-sheet-close"
+            type="button"
+            onClick={() => setCreateOpen(false)}
           >
-            <div className="create-sheet-actions">
-              <Link to="/buscar" onClick={() => setCreateOpen(false)}>
-                <AppIcon name="pencil" size={22} />
-                <span>
-                  <strong>Escribir reseña</strong>
-                  <small>Buscá un lanzamiento para comenzar</small>
-                </span>
-              </Link>
-              <Link to="/listas?nueva=1" onClick={() => setCreateOpen(false)}>
-                <AppIcon name="list" size={22} />
-                <span>
-                  <strong>Crear lista</strong>
-                  <small>Reuní y ordená lanzamientos</small>
-                </span>
-              </Link>
-            </div>
-            <div className="create-sheet-divider" />
-            <button className="create-sheet-close" type="button" onClick={() => setCreateOpen(false)}>Cerrar</button>
-          </BottomSheet>
-        </>
+            Cerrar
+          </button>
+        </BottomSheet>
       )}
     </>
   );
