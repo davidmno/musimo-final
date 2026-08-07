@@ -127,7 +127,25 @@ export async function getRecentSearches(userId) {
     .sort({ savedAt: -1 })
     .limit(3)
     .toArray();
-  return items.map(({ _id, userId: ownerId, ...item }) => ({ ...item, id: item.itemId }));
+  return items
+    .filter(
+      (item) =>
+        !(
+          item.type === "person" &&
+          String(item.handle || "")
+            .toLowerCase() === "admin"
+        ),
+    )
+    .map(
+      ({
+        _id,
+        userId: ownerId,
+        ...item
+      }) => ({
+        ...item,
+        id: item.itemId,
+      }),
+    );
 }
 
 export async function saveRecentSearch(userId, entity) {
@@ -365,6 +383,19 @@ function visibleReview(item, viewerId) {
 
 export async function getFeed(userId, filter = "all", audience = "all", page = 1, limit = 10) {
   const db = await getDb();
+
+  const adminUsers = await db
+    .collection("usuarios")
+    .find(
+      { rol: "admin" },
+      { projection: { _id: 1 } },
+    )
+    .toArray();
+
+  const adminIds = adminUsers.map((user) =>
+    idString(user._id),
+  );
+
   const currentPage = Math.max(1, Number.parseInt(page, 10) || 1);
   const pageSize = Math.min(20, Math.max(1, Number.parseInt(limit, 10) || 10));
   const offset = (currentPage - 1) * pageSize;
@@ -372,16 +403,39 @@ export async function getFeed(userId, filter = "all", audience = "all", page = 1
   const followed = audience === "following"
     ? await db.collection("follows").find({ followerId: idString(userId) }).toArray()
     : [];
-  const ownerIds = followed.map((item) => item.targetId);
+  const adminIdSet = new Set(adminIds);
+
+  const ownerIds = followed
+    .map((item) => item.targetId)
+    .filter(
+      (ownerId) =>
+        !adminIdSet.has(idString(ownerId)),
+    );
+
   if (audience === "following" && !ownerIds.length) {
     return {
       items: [],
       pagination: { page: 1, pageSize, total: 0, totalPages: 1, hasPrevious: false, hasNext: false },
     };
   }
-  const ownerFilter = audience === "following" ? { $in: ownerIds } : { $exists: true };
-  const reviewQuery = { userId: ownerFilter };
-  const listQuery = { ownerId: ownerFilter, visibility: { $ne: "private" } };
+  const ownerFilter =
+    audience === "following"
+      ? { $in: ownerIds }
+      : {
+          $exists: true,
+          ...(adminIds.length
+            ? { $nin: adminIds }
+            : {}),
+        };
+
+  const reviewQuery = {
+    userId: ownerFilter,
+  };
+
+  const listQuery = {
+    ownerId: ownerFilter,
+    visibility: { $ne: "private" },
+  };
 
   const [reviews, lists, reviewCount, listCount] = await Promise.all([
     filter === "lists" ? [] : db.collection("reviews").find(reviewQuery).sort({ createdAt: -1 }).limit(fetchLimit).toArray(),
@@ -420,11 +474,51 @@ export async function getFeed(userId, filter = "all", audience = "all", page = 1
 
 export async function getHomeCommunity(viewerId = null) {
   const db = await getDb();
-  const reviewFilter = viewerId ? { userId: { $ne: idString(viewerId) } } : {};
-  const viewerObjectId = viewerId ? asObjectId(viewerId) : null;
+
+  const adminUsers = await db
+    .collection("usuarios")
+    .find(
+      { rol: "admin" },
+      { projection: { _id: 1 } },
+    )
+    .toArray();
+
+  const adminIds = adminUsers.map((user) =>
+    idString(user._id),
+  );
+
+  const excludedReviewOwners = [
+    ...adminIds,
+    ...(viewerId
+      ? [idString(viewerId)]
+      : []),
+  ];
+
+  const reviewFilter =
+    excludedReviewOwners.length
+      ? {
+          userId: {
+            $nin: excludedReviewOwners,
+          },
+        }
+      : {};
+
+  const viewerObjectId = viewerId
+    ? asObjectId(viewerId)
+    : null;
   const [reviews, lists, resonances, latestUsers, viewerFollows] = await Promise.all([
     db.collection("reviews").find(reviewFilter).sort({ createdAt: -1 }).limit(20).toArray(),
-    db.collection("lists").find({ visibility: { $ne: "private" } }).sort({ createdAt: -1 }).limit(16).toArray(),
+    db
+      .collection("lists")
+      .find({
+        visibility: { $ne: "private" },
+        ...(adminIds.length
+          ? { ownerId: { $nin: adminIds } }
+          : {}),
+      })
+      .sort({ createdAt: -1 })
+      .limit(16)
+      .toArray(),
     db.collection("resonances").aggregate([
       { $match: { targetType: "review", createdAt: { $gte: new Date(Date.now() - 30 * 86400000) } } },
       { $group: { _id: "$targetId", score: { $sum: 1 } } },
@@ -432,7 +526,20 @@ export async function getHomeCommunity(viewerId = null) {
       { $limit: 12 },
     ]).toArray(),
     db.collection("usuarios")
-      .find(viewerObjectId ? { _id: { $ne: viewerObjectId } } : {}, { projection: { password: 0, email: 0 } })
+      .find(
+        {
+          rol: { $ne: "admin" },
+          ...(viewerObjectId
+            ? { _id: { $ne: viewerObjectId } }
+            : {}),
+        },
+        {
+          projection: {
+            password: 0,
+            email: 0,
+          },
+        },
+      )
       .sort({ createdAt: -1, _id: -1 })
       .limit(3)
       .toArray(),
@@ -479,9 +586,54 @@ export async function searchCommunity(query, viewerId = null, limit = 10) {
   const db = await getDb();
   const regex = new RegExp(escapeRegExp(clean), "i");
   const safeLimit = Math.min(Number(limit) || 10, 20);
+
+  const adminUsers = await db
+    .collection("usuarios")
+    .find(
+      { rol: "admin" },
+      { projection: { _id: 1 } },
+    )
+    .toArray();
+
+  const adminIds = adminUsers.map((user) =>
+    idString(user._id),
+  );
+
   const [people, lists] = await Promise.all([
-    db.collection("usuarios").find({ $or: [{ nombre: regex }, { handle: regex }] }, { projection: { password: 0, email: 0 } }).limit(safeLimit).toArray(),
-    db.collection("lists").find({ visibility: { $ne: "private" }, $or: [{ title: regex }, { description: regex }] }).limit(safeLimit).toArray(),
+    db
+      .collection("usuarios")
+      .find(
+        {
+          rol: { $ne: "admin" },
+          $or: [
+            { nombre: regex },
+            { handle: regex },
+          ],
+        },
+        {
+          projection: {
+            password: 0,
+            email: 0,
+          },
+        },
+      )
+      .limit(safeLimit)
+      .toArray(),
+
+    db
+      .collection("lists")
+      .find({
+        visibility: { $ne: "private" },
+        ...(adminIds.length
+          ? { ownerId: { $nin: adminIds } }
+          : {}),
+        $or: [
+          { title: regex },
+          { description: regex },
+        ],
+      })
+      .limit(safeLimit)
+      .toArray(),
   ]);
   const authors = await userMap(lists.map((list) => list.ownerId));
   return {

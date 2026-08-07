@@ -143,6 +143,15 @@ export async function getPublicProfile(handle, viewerId = null) {
   if (!user) return null;
 
   const userId = idString(user._id);
+  const isMe = viewerId
+    ? idString(viewerId) === userId
+    : false;
+
+  // Las cuentas administrativas no son perfiles públicos.
+  if (user.rol === "admin" && !isMe) {
+    return null;
+  }
+
   const [counts, isFollowing, reviews, lists] = await Promise.all([
     countsFor(user._id),
     viewerId
@@ -161,8 +170,6 @@ export async function getPublicProfile(handle, viewerId = null) {
       .limit(24)
       .toArray(),
   ]);
-
-  const isMe = viewerId ? idString(viewerId) === userId : false;
 
   return {
     ...basePublicUser(user, counts),
@@ -214,7 +221,13 @@ export async function searchUsers(query, limit = 12) {
   const regex = new RegExp(escapeRegExp(clean), "i");
   const users = await db
     .collection("usuarios")
-    .find({ $or: [{ nombre: regex }, { handle: regex }] })
+    .find({
+      rol: { $ne: "admin" },
+      $or: [
+        { nombre: regex },
+        { handle: regex },
+      ],
+    })
     .limit(Math.min(Number(limit) || 12, 25))
     .toArray();
   return users.map((user) => basePublicUser(user));
@@ -224,8 +237,21 @@ export async function followUser(followerId, targetId) {
   const db = await getDb();
   const follower = idString(followerId);
   const target = idString(targetId);
-  if (follower === target) throw new HttpError(400, "No podés seguirte a vos mismo");
-  if (!(await getAuthUserById(target))) throw new HttpError(404, "Usuario no encontrado");
+  if (follower === target) {
+    throw new HttpError(
+      400,
+      "No podés seguirte a vos mismo",
+    );
+  }
+
+  const targetUser = await getAuthUserById(target);
+
+  if (!targetUser || targetUser.rol === "admin") {
+    throw new HttpError(
+      404,
+      "Usuario no encontrado",
+    );
+  }
 
   const result = await db.collection("follows").updateOne(
     { followerId: follower, targetId: target },
@@ -292,6 +318,7 @@ export async function listConnections(userId, type) {
     .collection("usuarios")
     .find({
       _id: { $in: objectIds },
+      rol: { $ne: "admin" },
     })
     .toArray();
 
