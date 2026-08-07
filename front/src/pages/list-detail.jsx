@@ -212,12 +212,14 @@ export default function ListDetail() {
 
               <h1>{list.title}</h1>
 
-              <p className="detail-kicker">
-                Lista{" "}
-                {list.visibility === "private"
-                  ? "privada"
-                  : "pública"}
-              </p>
+              {list.canManage && (
+                <p className="detail-kicker">
+                  Lista{" "}
+                  {list.visibility === "private"
+                    ? "privada"
+                    : "pública"}
+                </p>
+              )}
 
               <p>{list.description}</p>
 
