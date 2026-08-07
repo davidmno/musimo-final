@@ -2106,6 +2106,7 @@ const CURATED_HOME_RELEASES = [
   },
   {
     key: "therapy-at-the-club",
+    catalogId: "ba05dfc2-797f-4a6d-a0d5-03385008eba2",
     title: "Therapy at the Club",
     queryArtist: "FLO",
     expectedArtists: [
@@ -2115,6 +2116,7 @@ const CURATED_HOME_RELEASES = [
   },
   {
     key: "petal-album",
+    catalogId: "2b8f453f-ffd6-4860-8742-7cff1c2feae3",
     title: "petal",
     queryArtist: "Ariana Grande",
     expectedArtists: [
@@ -2174,8 +2176,56 @@ async function resolveCuratedHomeRelease(
   definition,
 ) {
   return persistentCached(
-    `home-curated:v1:${definition.key}`,
+    /*
+     * v2 invalida los resultados anteriores,
+     * que pudieron haber elegido el sencillo.
+     */
+    `home-curated:v2:${definition.key}:${
+      definition.catalogId || "search"
+    }`,
     async () => {
+      /*
+       * Cuando conocemos el release-group ID,
+       * consultamos MusicBrainz directamente.
+       * No se decide por título, cantidad de
+       * canciones ni tipo inferido.
+       */
+      if (definition.catalogId) {
+        const rawRelease =
+          await getRawReleaseGroup(
+            definition.catalogId,
+          );
+
+        const release =
+          normalizeReleaseGroup(rawRelease);
+
+        if (
+          release.catalogId !==
+          definition.catalogId
+        ) {
+          throw new Error(
+            `MusicBrainz devolvió un identificador incorrecto para ${definition.title}.`,
+          );
+        }
+
+        if (
+          !matchesCuratedRelease(
+            release,
+            definition,
+          )
+        ) {
+          throw new Error(
+            `El lanzamiento ${definition.title} no coincide con la selección editorial.`,
+          );
+        }
+
+        return release;
+      }
+
+      /*
+       * Los demás lanzamientos siguen
+       * resolviéndose por título y artista.
+       */
       const safeTitle = definition.title
         .replace(/["\\]/g, " ")
         .trim();

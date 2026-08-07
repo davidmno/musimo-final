@@ -49,6 +49,19 @@ export function getAlbumNavigationData(slug) {
 
 export function getAlbumUrl(release = {}) {
   const normalized = saveReleaseNavigation(release);
+
+  /*
+   * El ID evita colisiones cuando un álbum y
+   * un sencillo comparten artista y título.
+   */
+  if (normalized.catalogId) {
+    return (
+      `/lanzamiento/id/` +
+      `${encodeURIComponent(normalized.catalogId)}/` +
+      `${normalized.slug}`
+    );
+  }
+
   return `/lanzamiento/${normalized.slug}`;
 }
 
