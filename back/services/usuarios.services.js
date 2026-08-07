@@ -165,7 +165,11 @@ export async function getPublicProfile(handle, viewerId = null) {
       .toArray(),
     db
       .collection("lists")
-      .find({ ownerId: userId, visibility: { $ne: "private" } })
+      .find(
+        isMe
+          ? { ownerId: userId }
+          : { ownerId: userId, visibility: { $ne: "private" } },
+      )
       .sort({ createdAt: -1 })
       .limit(24)
       .toArray(),
