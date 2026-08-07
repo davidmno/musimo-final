@@ -3111,3 +3111,34 @@
   font-weight: 700;
   letter-spacing: 0;
 }
+
+/* =========================================================
+   INICIO — alineación y ritmo final
+   ========================================================= */
+
+/* Mobile: el contenido de cada sección arranca donde arranca el título. */
+@media (max-width: 48rem) {
+  .home-page .home-review-queue,
+  .home-page .home-section-new-releases .horizontal-grid,
+  .home-page .home-section-reviews .horizontal-grid,
+  .home-page .home-section-lists .horizontal-grid {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  .home-page .home-section-new-releases .horizontal-grid {
+    gap: 8px !important;
+  }
+
+  .home-page .home-review-queue {
+    gap: 8px !important;
+  }
+}
+
+/* Desktop: mismo espacio visual entre cards de Por reseñar y Nuevos lanzamientos. */
+@media (min-width: 48.0625rem) {
+  .home-page .home-review-queue,
+  .home-page .home-section-new-releases .horizontal-grid {
+    gap: 18px !important;
+  }
+}
