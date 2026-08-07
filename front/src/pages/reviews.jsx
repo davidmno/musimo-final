@@ -180,7 +180,42 @@ export default function Reviews() {
               </strong>
               <span aria-hidden="true" />
             </div>
-            <PageHeader trail={reviewTrail} title={editId ? "Editar reseña" : "Nueva reseña"} description="Valorá el lanzamiento y dejá registrada tu experiencia." className="creation-editor-heading" action={<div className="form-actions creation-desktop-actions"><button className="btn btn-tertiary" type="button" onClick={requestCancel} disabled={saving}>Cancelar</button><button className="btn btn-primary btn-review" type="submit" disabled={saving} aria-busy={saving}>{saving ? "Guardando…" : editId ? "Guardar cambios" : "Publicar reseña"}</button></div>} />
+            <PageHeader trail={reviewTrail} title={editId ? "Editar reseña" : "Nueva reseña"} description="Valorá el lanzamiento y dejá registrada tu experiencia." className="creation-editor-heading" action={
+  <div className="form-actions creation-desktop-actions">
+    <button
+      className="btn btn-tertiary"
+      type="button"
+      onClick={requestCancel}
+      disabled={saving}
+    >
+      Cancelar
+    </button>
+
+    {editId && (
+      <button
+        className="btn btn-tertiary danger"
+        type="button"
+        onClick={() => setDeletePending(true)}
+        disabled={saving}
+      >
+        Eliminar reseña
+      </button>
+    )}
+
+    <button
+      className="btn btn-primary btn-review"
+      type="submit"
+      disabled={saving}
+      aria-busy={saving}
+    >
+      {saving
+        ? "Guardando…"
+        : editId
+          ? "Guardar cambios"
+          : "Publicar reseña"}
+    </button>
+  </div>
+} />
 
             <div className="review-editor-columns creation-editor-columns">
               <aside className="review-editor-context creation-editor-sidebar">
