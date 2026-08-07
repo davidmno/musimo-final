@@ -3493,3 +3493,41 @@
     background: transparent !important;
   }
 }
+
+/* =========================================================
+   LISTA MOBILE — jerarquía de acciones
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  .list-detail-page
+    .list-detail-actions.list-owner-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .list-detail-page
+    .list-detail-actions.list-owner-actions
+    .list-share-button {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    background: var(--primary, #c0451b) !important;
+    border-color: var(--primary, #c0451b) !important;
+    color: #fff !important;
+  }
+
+  .list-detail-page
+    .list-detail-actions.list-owner-actions
+    .list-share-button:hover,
+  .list-detail-page
+    .list-detail-actions.list-owner-actions
+    .list-share-button:focus-visible {
+    filter: brightness(.95);
+  }
+
+  .list-detail-page
+    .list-detail-actions.list-owner-actions
+    > .btn:not(.list-share-button) {
+    width: 100% !important;
+  }
+}
