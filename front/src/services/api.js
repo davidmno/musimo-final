@@ -55,14 +55,31 @@ export async function apiRequest(endpoint, options = {}) {
     return data;
   } catch (error) {
     if (error.name === "AbortError") {
-      const timedOut = controller.signal.reason === "timeout";
-      throw new Error(
-        timedOut
-          ? "La conexión tardó demasiado. Probá nuevamente."
-          : "La solicitud fue cancelada.",
+      const timedOut =
+        controller.signal.reason === "timeout";
+
+      if (timedOut) {
+        throw new Error(
+          "La conexión tardó demasiado. Probá nuevamente.",
+          { cause: error },
+        );
+      }
+
+      /*
+       * Una búsqueda anterior puede cancelarse
+       * normalmente cuando el usuario sigue escribiendo.
+       * Conservamos AbortError para que la interfaz
+       * pueda ignorarlo sin mostrar una alerta.
+       */
+      const abortError = new Error(
+        "Solicitud cancelada.",
         { cause: error },
       );
+
+      abortError.name = "AbortError";
+      throw abortError;
     }
+
     if (error instanceof TypeError) {
       throw new Error(
         "No pudimos conectar con musimo. Revisá tu conexión e intentá nuevamente.",
