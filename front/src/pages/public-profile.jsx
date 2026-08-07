@@ -488,11 +488,9 @@ function image(event) {
 
       {profile.isMe && tab === "saved" && <section className="profile-tab-panel"><div className="section-header"><h2>Por reseñar</h2>{saved.length > 0 && <button className="text-button danger" type="button" onClick={() => setConfirmClear(true)}>Vaciar</button>}</div><div className="result-grid profile-saved-grid">{saved.map((release) => <article key={release.catalogId || `${release.artist}-${release.album}`}><ReleaseCard release={release} /><button className="profile-card-remove" type="button" aria-label={`Quitar ${release.album}`} onClick={() => removeSaved(release)}><AppIcon name="x" size={16} /></button></article>)}</div>{!saved.length && <Link className="empty-state empty-state-action" to="/buscar"><span>Todavía no guardaste lanzamientos.</span><strong>Buscar para guardar →</strong></Link>}</section>}
       {tab === "reviews" && <section className="profile-tab-panel"><div className="section-header"><h2>{profile.isMe ? "Tus reseñas" : `Reseñas de ${profile.nombre}`}</h2></div><div className="result-grid profile-review-list">{profile.reviews.map((review) => <ReviewCard key={review._id} review={{ ...review, author: profile }} />)}</div>{!profile.reviews.length && (profile.isMe ? <Link className="empty-state empty-state-action" to="/buscar"><span>Todavía no publicaste reseñas.</span><strong>Buscar un lanzamiento para reseñar →</strong></Link> : <p className="empty-state">Todavía no publicó reseñas.</p>)}</section>}
-      {tab === "lists" && <section className="profile-tab-panel"><div className="section-header"><h2>{profile.isMe ? "Tus listas" : `Listas de ${profile.nombre}`}</h2>{profile.isMe && (
-  <Link to="/listas?nueva=1">
-    Crear lista
-  </Link>
-)}</div><div className="result-grid profile-list-list">{profile.lists.map((list) => <ListCard
+      {tab === "lists" && <section className="profile-tab-panel"><div className="section-header"><h2>{profile.isMe ? "Tus listas" : `Listas de 
+      ${profile.nombre}`}</h2>
+        </div><div className="result-grid profile-list-list">{profile.lists.map((list) => <ListCard
   key={list._id}
   list={{
     ...list,
