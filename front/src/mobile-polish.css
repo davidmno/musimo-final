@@ -3196,3 +3196,67 @@
     column-gap: 16px !important;
   }
 }
+
+/* =========================================================
+   INICIO — alineación real de cards y ritmo final
+   ========================================================= */
+
+/* MOBILE */
+@media (max-width: 48rem) {
+  /*
+   * La sangría venía del padding interno de release-tile
+   * y list-tile, no del carril.
+   */
+  .home-page
+    .home-section-new-releases
+    .release-tile,
+  .home-page
+    .home-section-lists
+    .list-tile {
+    padding: 0 !important;
+  }
+
+  /*
+   * Al quitar esos 9 px internos, dejamos una separación
+   * natural entre cards.
+   */
+  .home-page
+    .home-section-new-releases
+    .horizontal-grid,
+  .home-page
+    .home-section-lists
+    .horizontal-grid {
+    gap: 16px !important;
+  }
+
+  /*
+   * Menos vacío al final de Inicio, antes de la tabbar.
+   */
+  .home-page .home-sidebar-section:last-child {
+    margin-bottom: 8px !important;
+  }
+}
+
+/* DESKTOP */
+@media (min-width: 48.0625rem) {
+  /*
+   * Por reseñar: las cards no tienen padding lateral.
+   * Dejamos 18 px reales entre ellas.
+   */
+  .home-page .home-review-queue {
+    gap: 18px !important;
+    column-gap: 18px !important;
+  }
+
+  /*
+   * Nuevos lanzamientos conserva su padding de 9 px.
+   * Con gap 0, la distancia visual entre portadas
+   * también termina siendo 18 px.
+   */
+  .home-page
+    .home-section-new-releases
+    .horizontal-grid {
+    gap: 0 !important;
+    column-gap: 0 !important;
+  }
+}
