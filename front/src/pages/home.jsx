@@ -265,12 +265,11 @@ export default function Home() {
                     recentDate
                   />
                 ))}
-                {!content.newReleases.length && (
-                  <p className="empty-state">
-                    El catálogo está actualizándose. Probá la búsqueda mientras
-                    tanto.
-                  </p>
-                )}
+               {!content.newReleases.length && (
+  <div className="home-empty-state">
+    El catálogo se está actualizando. Probá la búsqueda mientras tanto.
+  </div>
+)}
               </Section>
               <Section
                 className="home-section-reviews"
@@ -280,11 +279,11 @@ export default function Home() {
                 {content.recentStories.map((review) => (
                   <ReviewCard key={review._id} review={review} home />
                 ))}
-                {!content.recentStories.length && (
-                  <p className="empty-state">
-                    Las primeras historias de la comunidad aparecerán acá.
-                  </p>
-                )}
+               {!content.generatingStories.length && (
+  <div className="home-empty-state">
+    Las primeras historias de la comunidad aparecerán acá.
+  </div>
+)}
               </Section>
               <Section
                 className="home-section-lists"
@@ -294,9 +293,11 @@ export default function Home() {
                 {content.discoverLists.map((list) => (
                   <ListCard key={list._id} list={list} />
                 ))}
-                {!content.discoverLists.length && (
-                  <p className="empty-state">Todavía no hay listas públicas.</p>
-                )}
+               {!content.discoverLists.length && (
+  <div className="home-empty-state">
+    Todavía no hay listas publicadas.
+  </div>
+)}
               </Section>
             </div>
           </div>
