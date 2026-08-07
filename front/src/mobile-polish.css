@@ -3079,3 +3079,35 @@
     gap: 6px;
   }
 }
+
+
+/* =========================================================
+   AJUSTES TIPOGRÁFICOS FINALES
+   ========================================================= */
+
+/*
+ * Sólo escritorio:
+ * los títulos laterales de Inicio comparten el lenguaje
+ * funcional de “Personas que seguís” en Comunidad.
+ */
+@media (min-width: 48.0625rem) {
+  .home-page .home-sidebar-heading h2 {
+    font-family: "Inter", sans-serif !important;
+    font-size: 1rem !important;
+    line-height: 1.3;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+}
+
+/*
+ * El contador de comentarios es un dato funcional,
+ * por eso utiliza Inter en todos los tamaños.
+ */
+.comments-section-header h2 {
+  font-family: "Inter", sans-serif !important;
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: 0;
+}
