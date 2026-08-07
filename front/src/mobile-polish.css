@@ -3533,22 +3533,36 @@
 }
 
 /* =========================================================
-   HOME MOBILE — empty states a ancho completo
+   HOME MOBILE — estados vacíos a ancho completo
    ========================================================= */
 
 @media (max-width: 48rem) {
   .home-page .home-empty-state {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
     margin: 0 !important;
-    display: block !important;
+    text-align: center !important;
   }
 
-  .home-page .home-section-new-releases .home-empty-state,
-  .home-page .home-section-reviews .home-empty-state,
-  .home-page .home-section-lists .home-empty-state {
+  /* Cuando una sección del home sólo tiene el mensaje vacío,
+     el contenedor deja de comportarse como carrusel */
+  .home-page .home-section-new-releases .horizontal-grid:has(.home-empty-state),
+  .home-page .home-section-reviews .horizontal-grid:has(.home-empty-state),
+  .home-page .home-section-lists .horizontal-grid:has(.home-empty-state) {
+    display: block !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .home-page .home-section-new-releases .horizontal-grid:has(.home-empty-state) > .home-empty-state,
+  .home-page .home-section-reviews .horizontal-grid:has(.home-empty-state) > .home-empty-state,
+  .home-page .home-section-lists .horizontal-grid:has(.home-empty-state) > .home-empty-state {
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
