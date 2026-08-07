@@ -11,3 +11,12 @@
   white-space: pre-wrap !important;
   overflow-wrap: anywhere;
 }
+
+/* Desktop: Reseña y Momento usan exactamente la misma escala tipográfica. */
+@media (min-width: 48.0625rem) {
+  .story-detail-page .review-detail-content .review-copy-section .story-detail-text,
+  .story-detail-page .review-detail-content .review-moment-section > p {
+    font-size: 1rem !important;
+    line-height: 1.7 !important;
+  }
+}
