@@ -164,6 +164,7 @@ export default function Feed() {
                     <ListCard
                       key={`list-${item.data._id}`}
                       list={{ ...item.data, author: item.author }}
+                      community
                     />
                   ),
                 )}

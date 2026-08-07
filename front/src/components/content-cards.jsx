@@ -146,7 +146,11 @@ export function ReviewCard({
   );
 }
 
-export function ListCard({ list, compact = false }) {
+export function ListCard({
+  list,
+  compact = false,
+  community = false,
+}) {
   const albums = list.albums || [];
 
   const author = list.author || {
@@ -157,6 +161,35 @@ export function ListCard({ list, compact = false }) {
       "C",
     avatarImage: list.ownerAvatarImage || "",
   };
+
+  if (community) {
+    return (
+      <article className="story-tile community-list-story">
+        <Link
+          className="story-tile-main"
+          to={`/lista/${list._id}`}
+        >
+          <span className="story-author">
+            <Avatar user={author} size={32} />
+            <span>
+              Lista de{" "}
+              <b>
+                {author?.nombre ||
+                  list.ownerName ||
+                  "Usuario"}
+              </b>
+            </span>
+          </span>
+
+          <span className="story-release-copy">
+            <span>
+              <strong>{list.title}</strong>
+            </span>
+          </span>
+        </Link>
+      </article>
+    );
+  }
 
   return (
     <Link className={compact ? "content-row list-row" : "list-tile"} to={`/lista/${list._id}`}>
