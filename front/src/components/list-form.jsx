@@ -5,6 +5,7 @@ import StatusMessage from "./status-message";
 import ConfirmDialog from "./confirm-dialog";
 import PageHeader from "./page-header";
 import AppIcon from "./app-icon";
+import useUnsavedChangesGuard from "../hooks/use-unsaved-changes-guard";
 
 const blank = { title: "", description: "", visibility: "public", albums: [] };
 
@@ -16,6 +17,21 @@ export default function ListForm({ initialList, onSave, onCancel }) {
   const [status, setStatus] = useState({ type: "", text: "" });
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [cancelPending, setCancelPending] = useState(false);
+
+  const original = initialList
+    ? { ...blank, ...initialList }
+    : blank;
+
+  const hasUnsavedChanges =
+    JSON.stringify(form) !== JSON.stringify(original);
+
+  const {
+    navigationPending,
+    cancelNavigation,
+    confirmNavigation,
+  } = useUnsavedChangesGuard(
+    hasUnsavedChanges && !busy,
+  );
 
   useEffect(() => { setForm(initialList ? { ...blank, ...initialList } : blank); }, [initialList]);
 
@@ -50,10 +66,11 @@ export default function ListForm({ initialList, onSave, onCancel }) {
   }
 
   function requestCancel() {
-    const original = initialList ? { ...blank, ...initialList } : blank;
-    const changed = JSON.stringify(form) !== JSON.stringify(original);
-    if (changed) setCancelPending(true);
-    else onCancel();
+    if (hasUnsavedChanges) {
+      setCancelPending(true);
+    } else {
+      onCancel();
+    }
   }
 
   async function submit(event) {
@@ -103,6 +120,30 @@ export default function ListForm({ initialList, onSave, onCancel }) {
       </div>
       <div className="mobile-sticky-submit"><button className="btn btn-primary" type="submit" disabled={busy || !form.albums.length} aria-busy={busy}>{busy ? "Guardando…" : initialList?._id ? "Guardar cambios" : "Publicar lista"}</button></div>
     </form>
-    <ConfirmDialog open={cancelPending} title="¿Descartar los cambios?" description={initialList?._id ? "Las modificaciones de esta lista no se guardarán." : "La lista nueva y los lanzamientos agregados se perderán."} confirmLabel="Descartar" onCancel={() => setCancelPending(false)} onConfirm={onCancel} />
+    <ConfirmDialog
+      open={cancelPending}
+      title="¿Descartar los cambios?"
+      description={
+        initialList?._id
+          ? "Las modificaciones de esta lista no se guardarán."
+          : "La lista nueva y los lanzamientos agregados se perderán."
+      }
+      confirmLabel="Descartar"
+      onCancel={() => setCancelPending(false)}
+      onConfirm={onCancel}
+    />
+
+    <ConfirmDialog
+      open={navigationPending}
+      title="¿Descartar los cambios?"
+      description={
+        initialList?._id
+          ? "Las modificaciones de esta lista no se guardarán."
+          : "La lista nueva y los lanzamientos agregados se perderán."
+      }
+      confirmLabel="Salir"
+      onCancel={cancelNavigation}
+      onConfirm={confirmNavigation}
+    />
   </section>;
 }

@@ -3345,3 +3345,29 @@
     column-gap: 18px !important;
   }
 }
+
+/* =========================================================
+   RESEÑA MOBILE — acciones de edición
+   ========================================================= */
+
+@media (max-width: 48rem) {
+  .review-editor-page
+    .mobile-sticky-submit.has-delete-action {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .review-editor-page
+    .mobile-sticky-submit.has-delete-action
+    .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .review-editor-page
+    .mobile-sticky-submit
+    .danger {
+    color: var(--danger, #b42318);
+  }
+}

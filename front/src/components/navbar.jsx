@@ -9,6 +9,7 @@ import {
 import { Avatar } from "./content-cards";
 import BottomSheet from "./bottom-sheet";
 import AppIcon from "./app-icon";
+import { requestGuardedNavigation } from "../hooks/use-unsaved-changes-guard";
 function notificationLabel(item) {
   if (item.type === "follow") return "empezó a seguirte";
   if (item.type === "comment_resonance") return "resonó con tu comentario";
@@ -99,8 +100,10 @@ export default function Navbar() {
   }, [isMobile]);
 
   function signOut() {
-    logout();
-    navigate("/iniciar-sesion");
+    requestGuardedNavigation(() => {
+      logout();
+      navigate("/iniciar-sesion");
+    });
   }
   async function openNotification(item) {
     if (!item.read) {
@@ -112,7 +115,9 @@ export default function Navbar() {
       );
     }
     setNotificationOpen(false);
-    navigate(notificationDestination(item));
+    requestGuardedNavigation(() =>
+      navigate(notificationDestination(item)),
+    );
   }
 
   async function markAllNotifications() {
@@ -130,16 +135,35 @@ export default function Navbar() {
   }
 
   function goBack() {
-    const historyIndex = Number(window.history.state?.idx || 0);
-    if (historyIndex > 0) {
-      navigate(-1);
-      return;
-    }
-    const path = location.pathname;
-    if (path.startsWith("/artista/")) navigate("/buscar?categoria=artistas");
-    else if (path.startsWith("/lanzamiento/") || path.startsWith("/resena") || path.startsWith("/resenas")) navigate("/buscar?categoria=lanzamientos");
-    else if (path.startsWith("/lista") || path.startsWith("/comunidad")) navigate("/comunidad");
-    else navigate("/inicio");
+    requestGuardedNavigation(() => {
+      const historyIndex = Number(
+        window.history.state?.idx || 0,
+      );
+
+      if (historyIndex > 0) {
+        navigate(-1);
+        return;
+      }
+
+      const path = location.pathname;
+
+      if (path.startsWith("/artista/")) {
+        navigate("/buscar?categoria=artistas");
+      } else if (
+        path.startsWith("/lanzamiento/") ||
+        path.startsWith("/resena") ||
+        path.startsWith("/resenas")
+      ) {
+        navigate("/buscar?categoria=lanzamientos");
+      } else if (
+        path.startsWith("/lista") ||
+        path.startsWith("/comunidad")
+      ) {
+        navigate("/comunidad");
+      } else {
+        navigate("/inicio");
+      }
+    });
   }
 
   const mobileRoot = location.pathname === "/inicio";
@@ -281,7 +305,11 @@ const isOwnMobileProfile =
   <button
     className="mobile-notification-trigger"
     type="button"
-    onClick={() => navigate("/notificaciones")}
+    onClick={() =>
+      requestGuardedNavigation(() =>
+        navigate("/notificaciones"),
+      )
+    }
     aria-label={
       unread
         ? `${unread} notificaciones sin leer`

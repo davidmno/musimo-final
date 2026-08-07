@@ -7,12 +7,17 @@ import ConfirmDialog from "../components/confirm-dialog";
 import PageHeader from "../components/page-header";
 import { fallbackCover } from "../components/content-cards";
 import { getRelease } from "../services/catalog.service";
-import { createReview, getReview, updateReview } from "../services/reviews.service";
+import {
+  createReview,
+  deleteReview,
+  getReview,
+  updateReview,
+} from "../services/reviews.service";
 import { setBreadcrumbContext } from "../services/breadcrumb.service";
 import { createAlbumSlug } from "../services/album-link.service";
 import { createArtistSlug } from "../services/artist-link.service";
 import AppIcon from "../components/app-icon";
-import BackButton from "../components/back-button";
+import useUnsavedChangesGuard from "../hooks/use-unsaved-changes-guard";
 
 const initialForm = { catalogId: null, artistId: null, artist: "", album: "", image: "", releaseType: "Álbum", releaseDate: null, year: null, rating: 0, text: "", significado: "", momento: "", momentoVisibility: "public" };
 
@@ -43,7 +48,19 @@ export default function Reviews() {
   const [loadingRelease, setLoadingRelease] = useState(Boolean(!editId && !initialRelease && releaseId));
   const [saving, setSaving] = useState(false);
   const [cancelPending, setCancelPending] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
   const [status, setStatus] = useState({ type: "", text: "" });
+
+  const hasUnsavedChanges =
+    JSON.stringify(form) !== JSON.stringify(baseline);
+
+  const {
+    navigationPending,
+    cancelNavigation,
+    confirmNavigation,
+  } = useUnsavedChangesGuard(
+    hasUnsavedChanges && !saving,
+  );
   const { album: breadcrumbAlbum, artist: breadcrumbArtist, artistId: breadcrumbArtistId, catalogId: breadcrumbCatalogId } = form;
   const reviewTrail = [{ label: "Inicio", to: "/inicio" }, { label: "Lanzamientos", to: "/buscar?categoria=lanzamientos" }];
   if (form.artist) reviewTrail.push({ label: form.artist, to: `/artista/${createArtistSlug(form.artist)}` });
@@ -81,8 +98,33 @@ export default function Reviews() {
   }, [breadcrumbAlbum, breadcrumbArtist, breadcrumbArtistId, breadcrumbCatalogId]);
 
   function requestCancel() {
-    if (JSON.stringify(form) !== JSON.stringify(baseline)) setCancelPending(true);
-    else navigate(-1);
+    if (hasUnsavedChanges) {
+      setCancelPending(true);
+    } else {
+      navigate(-1);
+    }
+  }
+
+  async function removeReview() {
+    if (!editId) return;
+
+    setSaving(true);
+    setStatus({ type: "", text: "" });
+
+    try {
+      await deleteReview(editId);
+      setDeletePending(false);
+      navigate("/inicio", { replace: true });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        text:
+          error.message ||
+          "No se pudo eliminar la reseña.",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function submit(event) {
@@ -107,7 +149,21 @@ export default function Reviews() {
         <section className="review-editor-panel creation-editor-panel">
           <StatusMessage type={status.type}>{status.text}</StatusMessage>
           <form className="review-editor-form creation-editor-form" onSubmit={submit}>
-            <div className="mobile-editor-toolbar"><BackButton fallback={form.album ? `/lanzamiento/${createAlbumSlug(form.artist, form.album)}` : "/inicio"} /><strong>{editId ? "Editar reseña" : "Nueva reseña"}</strong><span aria-hidden="true" /></div>
+            <div className="mobile-editor-toolbar">
+              <button
+                className="back-button"
+                type="button"
+                onClick={requestCancel}
+                aria-label="Volver"
+              >
+                <AppIcon name="arrow-left" size={16} />
+                Volver
+              </button>
+              <strong>
+                {editId ? "Editar reseña" : "Nueva reseña"}
+              </strong>
+              <span aria-hidden="true" />
+            </div>
             <PageHeader trail={reviewTrail} title={editId ? "Editar reseña" : "Nueva reseña"} description="Valorá el lanzamiento y dejá registrada tu experiencia." className="creation-editor-heading" action={<div className="form-actions creation-desktop-actions"><button className="btn btn-tertiary" type="button" onClick={requestCancel} disabled={saving}>Cancelar</button><button className="btn btn-primary btn-review" type="submit" disabled={saving} aria-busy={saving}>{saving ? "Guardando…" : editId ? "Guardar cambios" : "Publicar reseña"}</button></div>} />
 
             <div className="review-editor-columns creation-editor-columns">
@@ -132,12 +188,73 @@ export default function Reviews() {
                 <div className="review-moment-block review-optional-field"><div className="moment-heading"><div><h2>Tu momento <span>(opcional)</span></h2><p>Vinculá esta música con una persona, un lugar o una etapa.</p></div><div className="moment-visibility-control"><span>Visibilidad:</span><button className={`moment-visibility-toggle ${form.momentoVisibility === "private" ? "private" : ""}`} type="button" aria-pressed={form.momentoVisibility === "private"} aria-label={form.momentoVisibility === "private" ? "Momento privado. Hacer público" : "Momento público. Hacer privado"} title={form.momentoVisibility === "private" ? "Momento privado" : "Momento público"} onClick={() => setForm({ ...form, momentoVisibility: form.momentoVisibility === "private" ? "public" : "private" })}><AppIcon name={form.momentoVisibility === "private" ? "eye-off" : "eye"} /></button></div></div><label><textarea rows="4" value={form.momento} onChange={(event) => setForm({ ...form, momento: event.target.value })} placeholder="Escribí tu momento" maxLength="2000" /></label></div>
               </div>
             </div>
-            <div className="mobile-sticky-submit"><button className="btn btn-primary btn-review" type="submit" disabled={saving} aria-busy={saving}>{saving ? "Guardando…" : editId ? "Guardar cambios" : "Publicar reseña"}</button></div>
+            <div
+              className={`mobile-sticky-submit ${
+                editId ? "has-delete-action" : ""
+              }`}
+            >
+              {editId && (
+                <button
+                  className="btn btn-tertiary danger"
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setDeletePending(true)}
+                >
+                  Eliminar reseña
+                </button>
+              )}
+
+              <button
+                className="btn btn-primary btn-review"
+                type="submit"
+                disabled={saving}
+                aria-busy={saving}
+              >
+                {saving
+                  ? "Guardando…"
+                  : editId
+                    ? "Guardar cambios"
+                    : "Publicar reseña"}
+              </button>
+            </div>
           </form>
         </section>
       </main>
       <Footer />
-      <ConfirmDialog open={cancelPending} title="¿Descartar los cambios?" description={editId ? "Las modificaciones de esta reseña no se guardarán." : "La reseña nueva y todo lo que escribiste se perderán."} confirmLabel="Descartar" onCancel={() => setCancelPending(false)} onConfirm={() => navigate(-1)} />
+      <ConfirmDialog
+        open={cancelPending}
+        title="¿Descartar los cambios?"
+        description={
+          editId
+            ? "Las modificaciones de esta reseña no se guardarán."
+            : "La reseña nueva y todo lo que escribiste se perderán."
+        }
+        confirmLabel="Descartar"
+        onCancel={() => setCancelPending(false)}
+        onConfirm={() => navigate(-1)}
+      />
+
+      <ConfirmDialog
+        open={navigationPending}
+        title="¿Descartar los cambios?"
+        description={
+          editId
+            ? "Las modificaciones de esta reseña no se guardarán."
+            : "La reseña nueva y todo lo que escribiste se perderán."
+        }
+        confirmLabel="Salir"
+        onCancel={cancelNavigation}
+        onConfirm={confirmNavigation}
+      />
+
+      <ConfirmDialog
+        open={deletePending}
+        title="¿Eliminar esta reseña?"
+        description="La reseña se eliminará de forma permanente."
+        confirmLabel="Eliminar"
+        onCancel={() => setDeletePending(false)}
+        onConfirm={removeReview}
+      />
     </div>
   );
 }
