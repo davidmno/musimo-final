@@ -512,9 +512,12 @@ export async function getHomeCommunity(viewerId = null) {
       .collection("lists")
       .find({
         visibility: { $ne: "private" },
-        ...(adminIds.length
-          ? { ownerId: { $nin: adminIds } }
-          : {}),
+        ownerId: {
+          $nin: [
+            ...adminIds,
+            ...(viewerId ? [idString(viewerId)] : []),
+          ],
+        },
       })
       .sort({ createdAt: -1 })
       .limit(16)
